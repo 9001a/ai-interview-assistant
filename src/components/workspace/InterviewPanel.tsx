@@ -246,7 +246,7 @@ export default function InterviewPanel() {
                         <Tag color="green">得分: {interview.score}</Tag>
                       )}
                     </Space>
-                    <Space direction="vertical" size={0} style={{ marginTop: 8 }}>
+                    <Space orientation="vertical" size={0} style={{ marginTop: 8 }}>
                       <Space size="small">
                         <FileTextOutlined style={{ color: '#8c8c8c' }} />
                         <Text type="secondary" style={{ fontSize: 12 }}>
@@ -418,10 +418,10 @@ export default function InterviewPanel() {
 
           <Form.Item name="interviewerType" label="面试官类型">
             <Radio.Group>
-              <Space direction="vertical">
+              <Space orientation="vertical">
                 {defaultInterviewerConfigs.map((config) => (
                   <Radio key={config.type} value={config.type}>
-                    <Space direction="vertical" size={0}>
+                    <Space orientation="vertical" size={0}>
                       <Text strong>{config.name}</Text>
                       <Text type="secondary" style={{ fontSize: 12 }}>
                         {config.style} · {config.questionStyle}

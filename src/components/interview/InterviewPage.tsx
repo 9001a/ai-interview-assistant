@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, Typography, Space, Button, message } from 'antd';
 import { 
   MessageOutlined, 
@@ -62,9 +62,13 @@ export default function InterviewPage() {
   const [kbOptions, setKbOptions] = useState<Array<{ value: string; label: string; kb: KnowledgeDocument }>>([]);
 
   // Check if this is a workspace interview
+  // 注意：使用 ref 获取最新的 workspaces，避免依赖 workspaces 导致循环
+  const workspacesRef = useRef(workspaces);
+  workspacesRef.current = workspaces;
+  
   useEffect(() => {
     if (currentInterviewId && currentInterviewWorkspaceId) {
-      const workspace = workspaces.find(w => w.id === currentInterviewWorkspaceId);
+      const workspace = workspacesRef.current.find(w => w.id === currentInterviewWorkspaceId);
       const interview = workspace?.interviews.find(i => i.id === currentInterviewId);
       
       if (workspace && interview) {
@@ -128,14 +132,15 @@ export default function InterviewPage() {
         }
       }
     }
-  }, [currentInterviewId, currentInterviewWorkspaceId, workspaces]);
+  }, [currentInterviewId, currentInterviewWorkspaceId]);
 
   // 同步消息到 workspaceStore（工作区面试时）
   useEffect(() => {
     if (isWorkspaceInterview && currentInterviewWorkspaceId && currentInterviewId && messages.length > 0) {
       updateInterview(currentInterviewWorkspaceId, currentInterviewId, { messages });
     }
-  }, [messages, isWorkspaceInterview, currentInterviewWorkspaceId, currentInterviewId, updateInterview]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [messages, isWorkspaceInterview, currentInterviewWorkspaceId, currentInterviewId]);
 
   // Load options
   useEffect(() => {

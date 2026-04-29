@@ -59,7 +59,7 @@ export const authApi = {
 export const jdApi = {
   // 分析 JD
   analyze: async (text: string) => {
-    return api.post('/jd/analyze', { text });
+    return api.post('/jd/analyze', { jdText: text });
   },
 
   // 保存 JD

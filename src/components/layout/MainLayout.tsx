@@ -14,18 +14,21 @@ import {
 import { useAuthStore } from '@/stores/authStore';
 import { useInterviewStore } from '@/stores/interviewStore';
 import { usePageStore } from '@/stores/pageStore';
+import { useWorkspaceStore } from '@/stores/workspaceStore';
 import WorkspacePage from '@/components/workspace/WorkspacePage';
 import JDPage from '@/components/jd/JDPage';
 import ResumePage from '@/components/resume/ResumePage';
 import InterviewPage from '@/components/interview/InterviewPage';
+import InterviewReport from '@/components/interview/InterviewReport';
 import HistoryPage from '@/components/history/HistoryPage';
+import HistoryChatViewer from '@/components/history/HistoryChatViewer';
 import KnowledgePage from '@/components/knowledge/KnowledgePage';
 import SettingsPage from '@/components/settings/SettingsPage';
 
 const { Header, Sider, Content } = Layout;
 const { Title } = Typography;
 
-type PageType = 'workspace' | 'jd' | 'resume' | 'interview' | 'history' | 'knowledge' | 'settings';
+type PageType = 'workspace' | 'jd' | 'resume' | 'interview' | 'interview_report' | 'history' | 'history_chat' | 'knowledge' | 'settings';
 
 export default function MainLayout() {
   const { logout } = useAuthStore();
@@ -80,8 +83,20 @@ export default function MainLayout() {
         return <ResumePage />;
       case 'interview':
         return <InterviewPage />;
+      case 'interview_report':
+        const { currentInterviewId, currentInterviewWorkspaceId, setCurrentPage } = usePageStore.getState();
+        const { workspaces } = useWorkspaceStore.getState();
+        const workspace = workspaces.find(w => w.id === currentInterviewWorkspaceId);
+        const interview = workspace?.interviews.find(i => i.id === currentInterviewId);
+        if (interview) {
+          return <InterviewReport interview={interview} onBack={() => setCurrentPage('workspace')} />;
+        }
+        return <WorkspacePage />;
       case 'history':
         return <HistoryPage />;
+      case 'history_chat':
+        const { currentHistoryRecord } = usePageStore.getState();
+        return currentHistoryRecord ? <HistoryChatViewer record={currentHistoryRecord} /> : <HistoryPage />;
       case 'knowledge':
         return <KnowledgePage />;
       case 'settings':
@@ -160,7 +175,9 @@ function getPageTitle(page: PageType): string {
     jd: 'JD分析',
     resume: '简历优化',
     interview: 'AI面试',
+    interview_report: '面试报告',
     history: '历史记录',
+    history_chat: '查看对话',
     knowledge: '知识库',
     settings: '设置',
   };

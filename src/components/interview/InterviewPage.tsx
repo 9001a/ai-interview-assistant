@@ -245,6 +245,14 @@ export default function InterviewPage() {
 
     setIsLoading(true);
     incrementTurnCount();
+    
+    // If it's a workspace interview, update turn count in workspace
+    if (isWorkspaceInterview && currentInterviewId && currentInterviewWorkspaceId) {
+      const { updateInterview } = useWorkspaceStore.getState();
+      updateInterview(currentInterviewWorkspaceId, currentInterviewId, {
+        turnCount: turnCount + 1,
+      });
+    }
 
     // Add typing message
     const typingMsg: ChatMessage = {

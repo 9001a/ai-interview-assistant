@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Card, Typography, Tag, Button, Space, Input, Select, message } from 'antd';
 import { HistoryOutlined, SearchOutlined, CalendarOutlined } from '@ant-design/icons';
 import { useHistoryStore } from '@/stores/historyStore';
+import { usePageStore } from '@/stores/pageStore';
 import type { HistoryRecordType, HistoryRecord } from '@/types';
 
 const { Title, Text } = Typography;
@@ -16,6 +17,7 @@ export default function HistoryPage() {
   
   const historyRecords = useHistoryStore((state) => state.records);
   const removeRecord = useHistoryStore((state) => state.removeRecord);
+  const { setCurrentPage, setCurrentHistoryRecord } = usePageStore();
 
   const getRecordTypeLabel = (type: HistoryRecordType) => {
     const labels: Record<HistoryRecordType, string> = {
@@ -56,11 +58,22 @@ export default function HistoryPage() {
   };
 
   const handleViewChat = (record: HistoryRecord) => {
-    message.info('查看对话功能开发中');
+    if (record.type === 'interview' && record.content?.messages) {
+      setCurrentHistoryRecord(record);
+      setCurrentPage('history_chat');
+    } else {
+      message.info('该记录暂无对话内容');
+    }
   };
 
   const handleContinueInterview = (record: HistoryRecord) => {
-    message.info('继续面试功能开发中');
+    if (record.source === 'workspace' && record.workspaceId && record.interviewId) {
+      const { setCurrentInterview, setCurrentPage } = usePageStore.getState();
+      setCurrentInterview(record.interviewId, record.workspaceId);
+      setCurrentPage('interview');
+    } else {
+      message.info('继续面试功能仅支持工作区面试记录');
+    }
   };
 
   const handleViewDetails = (record: HistoryRecord) => {

@@ -299,7 +299,9 @@ export default function InterviewPanel() {
                         icon={<EyeOutlined />}
                         size="small"
                         onClick={() => {
-                          message.info('面试报告功能开发中');
+                          const { setCurrentInterview, setCurrentPage } = usePageStore.getState();
+                          setCurrentInterview(interview.id, currentWorkspace.id);
+                          setCurrentPage('interview_report');
                         }}
                       >
                         查看报告

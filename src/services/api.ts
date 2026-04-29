@@ -60,8 +60,7 @@ export const authApi = {
 export const jdApi = {
   // 分析 JD
   analyze: async (text: string): Promise<{ success: boolean; data?: { summary: any; tags: string[] }; error?: string }> => {
-    const res = await api.post('/jd/analyze', { jdText: text });
-    return res.data;
+    return api.post('/jd/analyze', { jdText: text });
   },
 
   // 保存 JD
@@ -93,8 +92,7 @@ export const resumeApi = {
 
   // 优化简历
   optimize: async (data: { resumeContent: string; jdTexts: string[] }): Promise<{ success: boolean; data?: { content: string; highlights: string[]; score: number }; error?: string }> => {
-    const res = await api.post('/resume/optimize', data);
-    return res.data;
+    return api.post('/resume/optimize', data);
   },
 };
 

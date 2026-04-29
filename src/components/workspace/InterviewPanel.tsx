@@ -16,6 +16,7 @@ import {
   Tooltip,
   Popconfirm,
   Input,
+  message,
 } from 'antd';
 import {
   MessageOutlined,
@@ -28,7 +29,7 @@ import {
 } from '@ant-design/icons';
 import { useWorkspaceStore } from '@/stores/workspaceStore';
 import { WorkspaceInterview, InterviewerConfig } from '@/types';
-import { useRouter } from 'next/navigation';
+import { usePageStore } from '@/stores/pageStore';
 
 const { Title, Text } = Typography;
 
@@ -109,7 +110,7 @@ const mockKnowledgeBases = [
 ];
 
 export default function InterviewPanel() {
-  const router = useRouter();
+  const { setCurrentPage, setCurrentInterview } = usePageStore();
   const {
     currentWorkspace,
     startNewInterview,
@@ -154,7 +155,8 @@ export default function InterviewPanel() {
     form.resetFields();
 
     // 跳转到面试页面
-    router.push(`/interview/${interview.id}`);
+    setCurrentInterview(interview.id, currentWorkspace.id);
+    setCurrentPage('interview');
   };
 
   const getStatusTag = (status: WorkspaceInterview['status']) => {
@@ -285,7 +287,10 @@ export default function InterviewPanel() {
                         type="primary"
                         icon={<PlayCircleOutlined />}
                         size="small"
-                        onClick={() => router.push(`/interview/${interview.id}`)}
+                        onClick={() => {
+                          setCurrentInterview(interview.id, currentWorkspace.id);
+                          setCurrentPage('interview');
+                        }}
                       >
                         继续
                       </Button>
@@ -293,7 +298,9 @@ export default function InterviewPanel() {
                       <Button
                         icon={<EyeOutlined />}
                         size="small"
-                        onClick={() => router.push(`/interview/${interview.id}/report`)}
+                        onClick={() => {
+                          message.info('面试报告功能开发中');
+                        }}
                       >
                         查看报告
                       </Button>

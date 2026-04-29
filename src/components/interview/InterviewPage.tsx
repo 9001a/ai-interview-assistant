@@ -6,13 +6,16 @@ import {
   MessageOutlined, 
   PlayCircleOutlined, 
   PauseCircleOutlined,
-  ReloadOutlined 
+  ReloadOutlined,
+  ArrowLeftOutlined,
 } from '@ant-design/icons';
 import { useInterviewStore } from '@/stores/interviewStore';
 import { useHistoryStore } from '@/stores/historyStore';
+import { usePageStore } from '@/stores/pageStore';
+import { useWorkspaceStore } from '@/stores/workspaceStore';
 import InterviewSetup from './InterviewSetup';
 import InterviewChat from './InterviewChat';
-import type { JDAnalysis, Resume, KnowledgeDocument, ChatMessage } from '@/types';
+import type { JDAnalysis, Resume, KnowledgeDocument, ChatMessage, WorkspaceJD, WorkspaceResume } from '@/types';
 import { interviewApi } from '@/services/api';
 
 const { Title, Text } = Typography;
@@ -40,14 +43,86 @@ export default function InterviewPage() {
     resetInterview,
   } = useInterviewStore();
 
+  const { 
+    currentInterviewId, 
+    currentInterviewWorkspaceId,
+    setCurrentInterview,
+    setCurrentPage 
+  } = usePageStore();
+  
+  const { currentWorkspace, workspaces } = useWorkspaceStore();
+
   // Local state
   const [setupModalOpen, setSetupModalOpen] = useState(false);
   const [lastQuestion, setLastQuestion] = useState<string>('');
+  const [isWorkspaceInterview, setIsWorkspaceInterview] = useState(false);
 
   // Options for setup modal
   const [jdOptions, setJdOptions] = useState<Array<{ value: string; label: string; jd: JDAnalysis }>>([]);
   const [resumeOptions, setResumeOptions] = useState<Array<{ value: string; label: string; resume: Resume }>>([]);
   const [kbOptions, setKbOptions] = useState<Array<{ value: string; label: string; kb: KnowledgeDocument }>>([]);
+
+  // Check if this is a workspace interview
+  useEffect(() => {
+    if (currentInterviewId && currentInterviewWorkspaceId) {
+      const workspace = workspaces.find(w => w.id === currentInterviewWorkspaceId);
+      const interview = workspace?.interviews.find(i => i.id === currentInterviewId);
+      
+      if (workspace && interview) {
+        setIsWorkspaceInterview(true);
+        
+        // Convert workspace JD/resume to JDAnalysis/Resume format
+        const jd = workspace.jdList.find(j => j.id === interview.jdId);
+        const resume = workspace.resumes.find(r => r.id === interview.resumeId);
+        
+        if (jd) {
+          const mockJdAnalysis: JDAnalysis = {
+            id: jd.id,
+            userId: workspace.userId,
+            originalText: jd.originalText,
+            summary: {
+              overview: jd.title,
+              hiddenRequirements: '',
+              dailyWork: '',
+              prospects: '',
+            },
+            tags: jd.tags,
+            createdAt: jd.createdAt,
+            updatedAt: jd.createdAt,
+          };
+          setJDAnalysis(mockJdAnalysis);
+        }
+        
+        if (resume) {
+          const mockResume: Resume = {
+            id: resume.id,
+            userId: workspace.userId,
+            title: resume.title,
+            content: resume.content,
+            summary: '',
+            fileType: resume.fileType,
+            createdAt: resume.createdAt,
+            updatedAt: resume.createdAt,
+          };
+          setSelectedResume(mockResume);
+        }
+        
+        setInterviewerConfig(interview.interviewerConfig);
+        
+        // If interview is ongoing, start it
+        if (interview.status === 'ongoing') {
+          clearMessages();
+          setIsStarted(true);
+          // In a real implementation, we would load the existing messages here
+          generateFirstQuestion(
+            jdAnalysis, 
+            selectedResume, 
+            interview.interviewerConfig
+          );
+        }
+      }
+    }
+  }, [currentInterviewId, currentInterviewWorkspaceId, workspaces]);
 
   // Load options
   useEffect(() => {
@@ -227,23 +302,58 @@ export default function InterviewPage() {
   const handleEndInterview = () => {
     setIsStarted(false);
     
-    // 保存到历史记录 - 只保存 content，不需要完整的 WorkspaceInterview
-    useHistoryStore.getState().addRecord({
-      type: 'interview',
-      title: jdAnalysis ? (jdAnalysis.summary.overview || 'AI 面试') : 'AI 面试',
-      content: {
-        jdAnalysis,
-        resume: selectedResume,
-        messages: [...messages],
-        interviewerConfig,
-        knowledgeBaseId: selectedKnowledgeBase?.id,
-        turnCount,
-        score: 0, // 后续可以从最后一次评分提取
-      },
-      source: 'quick',
-    });
-    
-    message.success('面试已结束，已保存到历史记录');
+    if (isWorkspaceInterview && currentInterviewId && currentInterviewWorkspaceId) {
+      // Update workspace interview status
+      const { updateInterview } = useWorkspaceStore.getState();
+      updateInterview(currentInterviewWorkspaceId, currentInterviewId, {
+        status: 'completed',
+        score: 0, // Can calculate from messages
+      });
+      
+      // Save to history
+      useHistoryStore.getState().addRecord({
+        type: 'interview',
+        title: jdAnalysis ? (jdAnalysis.summary.overview || '工作区面试') : '工作区面试',
+        content: {
+          jdAnalysis,
+          resume: selectedResume,
+          messages: [...messages],
+          interviewerConfig,
+          knowledgeBaseId: selectedKnowledgeBase?.id,
+          turnCount,
+          score: 0,
+        },
+        source: 'workspace',
+        workspaceId: currentInterviewWorkspaceId,
+        interviewId: currentInterviewId,
+      });
+      
+      message.success('面试已结束，已保存到历史记录和工作区');
+    } else {
+      // 保存到历史记录 - 只保存 content，不需要完整的 WorkspaceInterview
+      useHistoryStore.getState().addRecord({
+        type: 'interview',
+        title: jdAnalysis ? (jdAnalysis.summary.overview || 'AI 面试') : 'AI 面试',
+        content: {
+          jdAnalysis,
+          resume: selectedResume,
+          messages: [...messages],
+          interviewerConfig,
+          knowledgeBaseId: selectedKnowledgeBase?.id,
+          turnCount,
+          score: 0, // 后续可以从最后一次评分提取
+        },
+        source: 'quick',
+      });
+      
+      message.success('面试已结束，已保存到历史记录');
+    }
+  };
+
+  // Go back to workspace
+  const handleBackToWorkspace = () => {
+    setCurrentInterview(null, null);
+    setCurrentPage('workspace');
   };
 
   // Reset
@@ -254,27 +364,48 @@ export default function InterviewPage() {
 
   return (
     <div style={{ maxWidth: 1000, margin: '0 auto', padding: '24px 0' }}>
+      {/* Header with back button for workspace interview */}
+      {isWorkspaceInterview && (
+        <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center' }}>
+          <Button 
+            icon={<ArrowLeftOutlined />} 
+            onClick={handleBackToWorkspace}
+            style={{ marginRight: 16 }}
+          >
+            返回工作区
+          </Button>
+          <Title level={4} style={{ margin: 0 }}>
+            工作区面试
+          </Title>
+        </div>
+      )}
+      
       {!isStarted ? (
         <Card style={{ borderRadius: 16 }}>
           <div style={{ textAlign: 'center', padding: '60px 24px' }}>
             <Title level={3} style={{ marginBottom: 16 }}>
               <MessageOutlined style={{ marginRight: 8, color: '#F5A623' }} />
-              AI 模拟面试
+              {isWorkspaceInterview ? '工作区面试' : 'AI 模拟面试'}
             </Title>
             <Text type="secondary" style={{ fontSize: 16, display: 'block', marginBottom: 32 }}>
-              选择 JD、简历和面试官，开始模拟面试
+              {isWorkspaceInterview 
+                ? '正在加载面试...' 
+                : '选择 JD、简历和面试官，开始模拟面试'
+              }
             </Text>
-            <Space size="large">
-              <Button 
-                type="primary" 
-                size="large" 
-                icon={<PlayCircleOutlined />} 
-                onClick={() => setSetupModalOpen(true)}
-                style={{ height: 48, minWidth: 180, fontSize: 16 }}
-              >
-                开始面试
-              </Button>
-            </Space>
+            {!isWorkspaceInterview && (
+              <Space size="large">
+                <Button 
+                  type="primary" 
+                  size="large" 
+                  icon={<PlayCircleOutlined />} 
+                  onClick={() => setSetupModalOpen(true)}
+                  style={{ height: 48, minWidth: 180, fontSize: 16 }}
+                >
+                  开始面试
+                </Button>
+              </Space>
+            )}
           </div>
         </Card>
       ) : (

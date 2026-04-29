@@ -218,6 +218,7 @@ export interface HistoryRecord {
   content: any;
   source: 'workspace' | 'quick';
   workspaceId?: string;
+  interviewId?: string;
   workspaceName?: string;
   createdAt: string;
   updatedAt: string;

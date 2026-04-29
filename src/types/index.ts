@@ -165,6 +165,21 @@ export interface WorkspaceOptimization {
   createdAt: string;
 }
 
+// 工作区面试记录
+export interface WorkspaceInterview {
+  id: string;
+  title: string;
+  jdId?: string;
+  resumeId?: string;
+  knowledgeBaseId?: string;
+  interviewerConfig: InterviewerConfig;
+  status: 'ongoing' | 'completed' | 'paused';
+  score?: number;
+  turnCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // 工作区类型
 export type WorkspaceType = 'backend' | 'frontend' | 'algorithm' | 'product' | 'custom';
 
@@ -176,6 +191,7 @@ export interface Workspace {
   jdList: WorkspaceJD[];
   resumes: WorkspaceResume[];
   optimizations: WorkspaceOptimization[];
+  interviews: WorkspaceInterview[];
   status: 'analyzing' | 'optimizing' | 'interviewing' | 'completed' | 'idle';
   createdAt: string;
   updatedAt: string;

@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { Workspace, WorkspaceType, WorkspaceJD, WorkspaceResume, WorkspaceOptimization } from '@/types';
+import { Workspace, WorkspaceType, WorkspaceJD, WorkspaceResume, WorkspaceOptimization, WorkspaceInterview, InterviewerConfig } from '@/types';
 
 interface WorkspaceState {
   workspaces: Workspace[];
@@ -29,8 +29,21 @@ interface WorkspaceState {
   // Optimization Actions
   addOptimization: (workspaceId: string, optimization: Omit<WorkspaceOptimization, 'id' | 'createdAt'>) => void;
 
+  // Interview Actions
+  addInterview: (workspaceId: string, interview: Omit<WorkspaceInterview, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  updateInterview: (workspaceId: string, interviewId: string, updates: Partial<WorkspaceInterview>) => void;
+  removeInterview: (workspaceId: string, interviewId: string) => void;
+  startNewInterview: (workspaceId: string, params: {
+    title: string;
+    jdId?: string;
+    resumeId?: string;
+    knowledgeBaseId?: string;
+    interviewerConfig: InterviewerConfig;
+  }) => WorkspaceInterview;
+
   // Utility
   getSelectedJDs: () => WorkspaceJD[];
+  getSelectedResume: () => WorkspaceResume | null;
   reset: () => void;
 }
 
@@ -61,6 +74,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       jdList: [],
       resumes: [],
       optimizations: [],
+      interviews: [],
       status: 'idle',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -222,6 +236,106 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
     const { currentWorkspace, selectedJDs } = get();
     if (!currentWorkspace) return [];
     return currentWorkspace.jdList.filter((jd) => selectedJDs.includes(jd.id));
+  },
+
+  getSelectedResume: () => {
+    return get().selectedResume;
+  },
+
+  // Interview Actions
+  addInterview: (workspaceId, interview) => {
+    const newInterview: WorkspaceInterview = {
+      ...interview,
+      id: generateId(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    set((state) => {
+      const updatedWorkspaces = state.workspaces.map((w) =>
+        w.id === workspaceId
+          ? { ...w, interviews: [newInterview, ...w.interviews], updatedAt: new Date().toISOString() }
+          : w
+      );
+
+      return {
+        workspaces: updatedWorkspaces,
+        currentWorkspace: state.currentWorkspace?.id === workspaceId
+          ? { ...state.currentWorkspace, interviews: [newInterview, ...state.currentWorkspace.interviews] }
+          : state.currentWorkspace,
+      };
+    });
+  },
+
+  updateInterview: (workspaceId, interviewId, updates) => {
+    set((state) => {
+      const updateInterviewList = (interviews: WorkspaceInterview[]) =>
+        interviews.map((i) =>
+          i.id === interviewId ? { ...i, ...updates, updatedAt: new Date().toISOString() } : i
+        );
+
+      const updatedWorkspaces = state.workspaces.map((w) =>
+        w.id === workspaceId
+          ? { ...w, interviews: updateInterviewList(w.interviews), updatedAt: new Date().toISOString() }
+          : w
+      );
+
+      return {
+        workspaces: updatedWorkspaces,
+        currentWorkspace: state.currentWorkspace?.id === workspaceId
+          ? { ...state.currentWorkspace, interviews: updateInterviewList(state.currentWorkspace.interviews) }
+          : state.currentWorkspace,
+      };
+    });
+  },
+
+  removeInterview: (workspaceId, interviewId) => {
+    set((state) => {
+      const updatedWorkspaces = state.workspaces.map((w) =>
+        w.id === workspaceId
+          ? { ...w, interviews: w.interviews.filter((i) => i.id !== interviewId), updatedAt: new Date().toISOString() }
+          : w
+      );
+
+      return {
+        workspaces: updatedWorkspaces,
+        currentWorkspace: state.currentWorkspace?.id === workspaceId
+          ? { ...state.currentWorkspace, interviews: state.currentWorkspace.interviews.filter((i) => i.id !== interviewId) }
+          : state.currentWorkspace,
+      };
+    });
+  },
+
+  startNewInterview: (workspaceId, params) => {
+    const interview: WorkspaceInterview = {
+      id: generateId(),
+      title: params.title,
+      jdId: params.jdId,
+      resumeId: params.resumeId,
+      knowledgeBaseId: params.knowledgeBaseId,
+      interviewerConfig: params.interviewerConfig,
+      status: 'ongoing',
+      turnCount: 0,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    set((state) => {
+      const updatedWorkspaces = state.workspaces.map((w) =>
+        w.id === workspaceId
+          ? { ...w, interviews: [interview, ...w.interviews], status: 'interviewing' as const, updatedAt: new Date().toISOString() }
+          : w
+      );
+
+      return {
+        workspaces: updatedWorkspaces,
+        currentWorkspace: state.currentWorkspace?.id === workspaceId
+          ? { ...state.currentWorkspace, interviews: [interview, ...state.currentWorkspace.interviews], status: 'interviewing' }
+          : state.currentWorkspace,
+      };
+    });
+
+    return interview;
   },
 
   reset: () => set({

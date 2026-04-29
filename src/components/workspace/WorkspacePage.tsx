@@ -12,7 +12,8 @@ import {
   ArrowLeftOutlined,
   CheckCircleOutlined,
   ClockCircleOutlined,
-  SyncOutlined
+  SyncOutlined,
+  MessageOutlined,
 } from '@ant-design/icons';
 import { useWorkspaceStore } from '@/stores/workspaceStore';
 import { useAuthStore } from '@/stores/authStore';
@@ -21,6 +22,7 @@ import { CreateWorkspaceModal } from './CreateWorkspaceModal';
 import { JDPanel } from './JDPanel';
 import { ResumePanel } from './ResumePanel';
 import { OptimizationPanel } from './OptimizationPanel';
+import InterviewPanel from './InterviewPanel';
 
 const { Title, Text } = Typography;
 const { TabPane } = Tabs;
@@ -159,6 +161,10 @@ export default function WorkspacePage() {
                         <CheckCircleOutlined className="mr-2 text-[#e1b382]" />
                         <Text type="secondary">{workspace.optimizations.length} 次优化</Text>
                       </div>
+                      <div className="flex items-center text-gray-600">
+                        <MessageOutlined className="mr-2 text-[#e1b382]" />
+                        <Text type="secondary">{workspace.interviews.length} 次面试</Text>
+                      </div>
                     </div>
                   </Card>
                 </Col>
@@ -243,6 +249,12 @@ export default function WorkspacePage() {
             key="optimization"
           >
             <OptimizationPanel />
+          </TabPane>
+          <TabPane
+            tab={<span><MessageOutlined /> 面试记录 ({currentWorkspace.interviews.length})</span>}
+            key="interview"
+          >
+            <InterviewPanel />
           </TabPane>
         </Tabs>
       </div>

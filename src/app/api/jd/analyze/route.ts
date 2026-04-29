@@ -7,7 +7,7 @@ export async function POST(request: Request) {
 
     if (!jdText || jdText.trim().length < 20) {
       return NextResponse.json(
-        { error: '请输入有效的岗位描述（至少20个字）' },
+        { success: false, error: '请输入有效的岗位描述（至少20个字）' },
         { status: 400 }
       );
     }
@@ -20,10 +20,10 @@ export async function POST(request: Request) {
       success: true,
       data: result,
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('❌ JD分析失败:', error);
     return NextResponse.json(
-      { error: '分析失败，请检查API Key配置后重试' },
+      { success: false, error: error.message || '分析失败，请检查API Key配置后重试' },
       { status: 500 }
     );
   }

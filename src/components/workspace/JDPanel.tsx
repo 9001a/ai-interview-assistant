@@ -30,7 +30,7 @@ export function JDPanel() {
       const result = await jdApi.analyze(jdText);
 
       if (!result.success || !result.data) {
-        message.error('JD 分析失败');
+        message.error(result.error || 'JD 分析失败');
         return;
       }
 
@@ -46,8 +46,8 @@ export function JDPanel() {
 
       message.success('JD 分析完成');
       setIsModalOpen(false);
-    } catch (error) {
-      message.error('JD 分析失败，请重试');
+    } catch (error: any) {
+      message.error(error.response?.data?.error || 'JD 分析失败，请重试');
       console.error(error);
     } finally {
       setLoading(false);

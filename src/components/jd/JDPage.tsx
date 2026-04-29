@@ -18,7 +18,8 @@ import {
 import { FileTextOutlined, CheckCircleOutlined, ThunderboltOutlined, RocketOutlined } from '@ant-design/icons';
 import { useInterviewStore } from '@/stores/interviewStore';
 import { useAuthStore } from '@/stores/authStore';
-import { analyzeJD, JDAnalysisResult } from '@/lib/openai';
+import { jdApi } from '@/services/api';
+import { JDAnalysisResult } from '@/lib/openai';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -73,19 +74,19 @@ export default function JDPage() {
 
     setLoading(true);
     try {
-      const result = await analyzeJD(values.jdText);
+      const result = await jdApi.analyze(values.jdText);
       console.log('Analysis Result:', result);
 
-      if (result.summary && result.summary.overview) {
-        setAnalysis(result.summary);
-        setTags(result.tags);
+      if (result.success && result.data && result.data.summary) {
+        setAnalysis(result.data.summary);
+        setTags(result.data.tags);
         message.success('分析完成！');
       } else {
         message.error('返回数据格式错误');
       }
     } catch (error: any) {
       console.error('Analysis Error:', error);
-      message.error(error.message || '分析失败');
+      message.error(error.response?.data?.error || '分析失败');
     } finally {
       setLoading(false);
     }

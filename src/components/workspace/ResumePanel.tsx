@@ -17,7 +17,7 @@ import {
 } from '@ant-design/icons';
 import { useWorkspaceStore } from '@/stores/workspaceStore';
 import { uploadResume } from '@/lib/resume-parser';
-import { optimizeResume } from '@/lib/openai';
+import { resumeApi } from '@/services/api';
 import { WorkspaceResume } from '@/types';
 
 const { Text, Title, Paragraph } = Typography;
@@ -89,25 +89,30 @@ export function ResumePanel() {
 
     setOptimizing(true);
     try {
-      const result = await optimizeResume(
-        selectedResume.content,
-        selectedJDs.map(jd => jd.originalText)
-      );
+      const result = await resumeApi.optimize({
+        resumeContent: selectedResume.content,
+        jdTexts: selectedJDs.map(jd => jd.originalText),
+      });
 
-      setOptimizationResult(result);
+      if (!result.success || !result.data) {
+        message.error('优化失败');
+        return;
+      }
+
+      setOptimizationResult(result.data);
 
       // Save optimization record
       addOptimization(currentWorkspace!.id, {
         resumeId: selectedResume.id,
         jdIds: selectedJDs.map(jd => jd.id),
-        optimizedContent: result.content,
-        highlights: result.highlights,
-        score: result.score,
+        optimizedContent: result.data.content,
+        highlights: result.data.highlights,
+        score: result.data.score,
       });
 
       message.success('简历优化完成');
-    } catch (error) {
-      message.error('优化失败，请重试');
+    } catch (error: any) {
+      message.error(error.response?.data?.error || '优化失败，请重试');
     } finally {
       setOptimizing(false);
     }

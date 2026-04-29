@@ -12,7 +12,7 @@ import {
   CalendarOutlined,
 } from '@ant-design/icons';
 import { useWorkspaceStore } from '@/stores/workspaceStore';
-import { analyzeJD } from '@/lib/openai';
+import { jdApi } from '@/services/api';
 import { JDAnalysisModal } from './JDAnalysisModal';
 import { WorkspaceJD } from '@/types';
 
@@ -27,7 +27,12 @@ export function JDPanel() {
   const handleAnalyze = async (jdText: string) => {
     setLoading(true);
     try {
-      const result = await analyzeJD(jdText);
+      const result = await jdApi.analyze(jdText);
+
+      if (!result.success || !result.data) {
+        message.error('JD 分析失败');
+        return;
+      }
 
       // Generate title from first line or default
       const title = jdText.split('\n')[0].slice(0, 30) || '未命名 JD';
@@ -35,8 +40,8 @@ export function JDPanel() {
       addJDToWorkspace(currentWorkspace!.id, {
         title: title + (title.length >= 30 ? '...' : ''),
         originalText: jdText,
-        summary: result.summary,
-        tags: result.tags,
+        summary: result.data.summary,
+        tags: result.data.tags,
       });
 
       message.success('JD 分析完成');

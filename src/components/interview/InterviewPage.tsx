@@ -197,7 +197,15 @@ export default function InterviewPage() {
   // 快速面试时重置 interviewStore
   // 注意：只有当没有 currentInterviewId 时才重置（避免继续面试时被重置）
   const hasInterviewIdRef = useRef(!!currentInterviewId);
+  const isInitializedRef = useRef(false);
   useEffect(() => {
+    // 等待一次渲染后再执行，确保 store 数据已加载
+    if (!isInitializedRef.current) {
+      isInitializedRef.current = true;
+      hasInterviewIdRef.current = !!currentInterviewId;
+      return;
+    }
+    
     const currentlyHasId = !!currentInterviewId;
     // 避免在继续面试时（已经有 currentInterviewId）重置状态
     if (!isWorkspaceInterview && !currentlyHasId && !hasInterviewIdRef.current) {
@@ -211,6 +219,9 @@ export default function InterviewPage() {
   }, [isWorkspaceInterview]);
   // 只依赖 isWorkspaceInterview，使用 ref 跟踪 currentInterviewId 变化
   // clearMessages, setIsStarted, resetInterview 是稳定的 store 方法，不需要作为依赖
+  // isInitializedRef 用于确保第一次渲染时不执行重置，等待 store 数据加载完成
+  // currentInterviewId 在第一次渲染时可能为 undefined，但实际上 store 中可能有值
+  // 这是因为 Zustand persist 中间件的加载是异步的，第一次渲染时可能还没加载完成
 
   // 同步消息到 workspaceStore（工作区面试时）
   useEffect(() => {

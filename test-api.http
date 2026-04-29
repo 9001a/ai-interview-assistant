@@ -1,0 +1,9 @@
+# Test JD Analyze API
+POST http://localhost:5000/api/jd/analyze
+Content-Type: application/json
+
+{
+  "jdText": "测试岗位描述，要求有3年以上Java开发经验，熟悉Spring Boot和微服务架构。日常负责系统设计和代码开发。"
+}
+
+###

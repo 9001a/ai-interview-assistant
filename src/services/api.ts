@@ -58,8 +58,9 @@ export const authApi = {
 // JD 分析 API
 export const jdApi = {
   // 分析 JD
-  analyze: async (text: string) => {
-    return api.post('/jd/analyze', { jdText: text });
+  analyze: async (text: string): Promise<{ analysis: JDAnalysis }> => {
+    const res = await api.post('/jd/analyze', { jdText: text });
+    return res.data || res;
   },
 
   // 保存 JD

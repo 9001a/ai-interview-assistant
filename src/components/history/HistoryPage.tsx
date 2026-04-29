@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Card, Typography, Tag, Button, Space, Input, Select } from 'antd';
+import { Card, Typography, Tag, Button, Space, Input, Select, message } from 'antd';
 import { HistoryOutlined, SearchOutlined, CalendarOutlined } from '@ant-design/icons';
 import { useHistoryStore } from '@/stores/historyStore';
 import type { HistoryRecordType, HistoryRecord } from '@/types';
@@ -53,6 +53,22 @@ export default function HistoryPage() {
       interview: '💬',
     };
     return icons[type] || '📌';
+  };
+
+  const handleViewChat = (record: HistoryRecord) => {
+    message.info('查看对话功能开发中');
+  };
+
+  const handleContinueInterview = (record: HistoryRecord) => {
+    message.info('继续面试功能开发中');
+  };
+
+  const handleViewDetails = (record: HistoryRecord) => {
+    message.info('查看详情功能开发中');
+  };
+
+  const handleViewReport = (record: HistoryRecord) => {
+    message.info('查看报告功能开发中');
   };
 
   // 筛选逻辑
@@ -188,17 +204,17 @@ export default function HistoryPage() {
                   <Space size="small">
                     {record.type === 'interview' && (
                       <>
-                        <Button type="link" size="small">查看对话</Button>
+                        <Button type="link" size="small" onClick={() => handleViewChat(record)}>查看对话</Button>
                         {record.status !== 'completed' && (
-                          <Button type="link" size="small">继续面试</Button>
+                          <Button type="link" size="small" onClick={() => handleContinueInterview(record)}>继续面试</Button>
                         )}
                       </>
                     )}
                     {record.type === 'jd_analysis' && (
-                      <Button type="link" size="small">查看详情</Button>
+                      <Button type="link" size="small" onClick={() => handleViewDetails(record)}>查看详情</Button>
                     )}
                     {record.type === 'resume_optimization' && (
-                      <Button type="link" size="small">查看报告</Button>
+                      <Button type="link" size="small" onClick={() => handleViewReport(record)}>查看报告</Button>
                     )}
                     <Button 
                       type="link" 

@@ -61,8 +61,8 @@ export default function InterviewPage() {
   const [isWorkspaceInterview, setIsWorkspaceInterview] = useState(false);
 
   // Options for setup modal
-  const [jdOptions, setJdOptions] = useState<Array<{ value: string; label: string; jd: JDAnalysis }>>([]);
-  const [resumeOptions, setResumeOptions] = useState<Array<{ value: string; label: string; resume: Resume }>>([]);
+  const [jdOptions, setJdOptions] = useState<Array<{ value: string; label: string; jd: JDAnalysis; source: 'global' | 'workspace' }>>([]);
+  const [resumeOptions, setResumeOptions] = useState<Array<{ value: string; label: string; resume: Resume; source: 'global' | 'workspace' }>>([]);
   const [kbOptions, setKbOptions] = useState<Array<{ value: string; label: string; kb: KnowledgeDocument }>>([]);
 
   // Check if this is a workspace interview
@@ -171,31 +171,63 @@ export default function InterviewPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages, isWorkspaceInterview, currentInterviewWorkspaceId, currentInterviewId]);
 
-  // Load options from global stores
+  // Load options based on interview type
   useEffect(() => {
-    // Load JD options from global jdStore (filter out items without id)
-    const jdOpts = jdList
-      .filter((jd): jd is JDAnalysis & { id: string } => !!jd.id)
-      .map((jd) => ({
+    if (isWorkspaceInterview && currentWorkspace) {
+      // 工作区面试：只使用工作区内的数据
+      const jdOpts = currentWorkspace.jdList.map((jd) => ({
         value: jd.id,
-        label: jd.summary.overview.slice(0, 50) || '未命名JD',
-        jd,
+        label: jd.title || '未命名JD',
+        jd: {
+          id: jd.id,
+          userId: 'workspace',
+          title: jd.title,
+          originalText: jd.originalText,
+          summary: jd.summary,
+          tags: jd.tags,
+          createdAt: jd.createdAt,
+          updatedAt: jd.createdAt,
+        } as unknown as JDAnalysis,
+        source: 'workspace' as const,
       }));
-    setJdOptions(jdOpts);
+      setJdOptions(jdOpts);
 
-    // Load Resume options from global resumeStore (filter out items without id)
-    const resumeOpts = resumes
-      .filter((resume): resume is Resume & { id: string } => !!resume.id)
-      .map((resume) => ({
+      const resumeOpts = currentWorkspace.resumes.map((resume) => ({
         value: resume.id,
         label: resume.title,
-        resume,
+        resume: {
+          id: resume.id,
+          userId: 'workspace',
+          title: resume.title,
+          originalText: resume.content,
+          createdAt: resume.createdAt,
+          updatedAt: resume.createdAt,
+        } as unknown as Resume,
+        source: 'workspace' as const,
       }));
-    setResumeOptions(resumeOpts);
+      setResumeOptions(resumeOpts);
+    } else {
+      // 快速面试：使用全局数据库的数据
+      const jdOpts = jdList.map((jd) => ({
+        value: jd.id!,
+        label: jd.summary.overview.slice(0, 50) || '未命名JD',
+        jd,
+        source: 'global' as const,
+      }));
+      setJdOptions(jdOpts);
+
+      const resumeOpts = resumes.map((resume) => ({
+        value: resume.id!,
+        label: resume.title,
+        resume,
+        source: 'global' as const,
+      }));
+      setResumeOptions(resumeOpts);
+    }
 
     // Mock KB options for now
     setKbOptions([{ value: '1', label: '后端面试题库', kb: { id: '1', userId: '1', title: '后端面试题库', sourceType: 'question_bank', createdAt: new Date().toISOString() } }]);
-  }, [jdList, resumes]);
+  }, [jdList, resumes, isWorkspaceInterview, currentWorkspace]);
 
   // Start interview
   const handleStart = async (config: {

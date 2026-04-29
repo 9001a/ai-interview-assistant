@@ -16,6 +16,7 @@ import {
   Badge,
   Tooltip,
   Popconfirm,
+  Input,
 } from 'antd';
 import {
   MessageOutlined,
@@ -343,7 +344,7 @@ export default function InterviewPanel() {
             label="面试标题"
             rules={[{ required: true, message: '请输入面试标题' }]}
           >
-            <input placeholder="例如：字节一面、阿里二面" />
+            <Input placeholder="例如：字节一面、阿里二面" />
           </Form.Item>
 
           <Form.Item

@@ -178,6 +178,7 @@ export interface WorkspaceInterview {
   status: 'ongoing' | 'completed' | 'paused';
   score?: number;
   turnCount: number;
+  messages?: any[];
   createdAt: string;
   updatedAt: string;
 }

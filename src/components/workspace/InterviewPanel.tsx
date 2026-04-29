@@ -110,7 +110,7 @@ const mockKnowledgeBases = [
 ];
 
 export default function InterviewPanel() {
-  const { setCurrentPage, setCurrentInterview } = usePageStore();
+  const { setCurrentPage, setCurrentInterview, setCurrentHistoryRecord } = usePageStore();
   const {
     currentWorkspace,
     startNewInterview,
@@ -282,6 +282,27 @@ export default function InterviewPanel() {
                     </Space>
                   </div>
                   <Space>
+                    <Button
+                      icon={<MessageOutlined />}
+                      size="small"
+                      onClick={() => {
+                        // 创建一个临时的历史记录对象来查看对话
+                        const tempRecord = {
+                          id: interview.id,
+                          type: 'interview' as const,
+                          title: interview.title,
+                          status: interview.status,
+                          turns: interview.turnCount,
+                          score: interview.score,
+                          messages: interview.messages || [],
+                          createdAt: interview.createdAt
+                        } as any;
+                        setCurrentHistoryRecord(tempRecord);
+                        setCurrentPage('history_chat');
+                      }}
+                    >
+                      查看对话
+                    </Button>
                     {interview.status === 'ongoing' ? (
                       <Button
                         type="primary"
@@ -296,6 +317,7 @@ export default function InterviewPanel() {
                       </Button>
                     ) : (
                       <Button
+                        type="primary"
                         icon={<EyeOutlined />}
                         size="small"
                         onClick={() => {

@@ -15,7 +15,8 @@ interface HistoryChatViewerProps {
 export default function HistoryChatViewer({ record }: HistoryChatViewerProps) {
   const { setCurrentPage } = usePageStore();
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const messages = record.content?.messages || [];
+  // 兼容两种情况：标准历史记录和工作区临时记录
+  const messages = record.content?.messages || (record as any).messages || [];
   const interviewerConfig = record.content?.interviewerConfig;
 
   // 自动滚动到底部

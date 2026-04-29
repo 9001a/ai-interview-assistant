@@ -50,7 +50,7 @@ export default function InterviewPage() {
     setCurrentPage 
   } = usePageStore();
   
-  const { currentWorkspace, workspaces } = useWorkspaceStore();
+  const { currentWorkspace, workspaces, updateInterview } = useWorkspaceStore();
 
   // Local state
   const [setupModalOpen, setSetupModalOpen] = useState(false);
@@ -113,16 +113,30 @@ export default function InterviewPage() {
         if (interview.status === 'ongoing') {
           clearMessages();
           setIsStarted(true);
-          // In a real implementation, we would load the existing messages here
-          generateFirstQuestion(
-            jdAnalysis, 
-            selectedResume, 
-            interview.interviewerConfig
-          );
+          // 如果有已保存的消息，加载它们
+          if (interview.messages && interview.messages.length > 0) {
+            interview.messages.forEach((msg: any) => {
+              addMessage(msg);
+            });
+          } else {
+            // 否则生成第一个问题
+            generateFirstQuestion(
+              jdAnalysis, 
+              selectedResume, 
+              interview.interviewerConfig
+            );
+          }
         }
       }
     }
   }, [currentInterviewId, currentInterviewWorkspaceId, workspaces]);
+
+  // 同步消息到 workspaceStore（工作区面试时）
+  useEffect(() => {
+    if (isWorkspaceInterview && currentInterviewWorkspaceId && currentInterviewId && messages.length > 0) {
+      updateInterview(currentInterviewWorkspaceId, currentInterviewId, { messages });
+    }
+  }, [messages, isWorkspaceInterview, currentInterviewWorkspaceId, currentInterviewId, updateInterview]);
 
   // Load options
   useEffect(() => {

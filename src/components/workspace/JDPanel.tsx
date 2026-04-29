@@ -12,14 +12,16 @@ import {
   CalendarOutlined,
 } from '@ant-design/icons';
 import { useWorkspaceStore } from '@/stores/workspaceStore';
+import { useJDStore } from '@/stores/jdStore';
 import { jdApi } from '@/services/api';
 import { JDAnalysisModal } from './JDAnalysisModal';
-import { WorkspaceJD } from '@/types';
+import { WorkspaceJD, JDAnalysis } from '@/types';
 
 const { Text, Title } = Typography;
 
 export function JDPanel() {
   const { currentWorkspace, addJDToWorkspace, removeJDFromWorkspace, selectedJDs, selectJD, deselectJD } = useWorkspaceStore();
+  const { addJD } = useJDStore();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [analyzingJD, setAnalyzingJD] = useState<WorkspaceJD | null>(null);
   const [loading, setLoading] = useState(false);
@@ -35,6 +37,7 @@ export function JDPanel() {
         return;
       }
 
+      // 添加到工作区
       addJDToWorkspace(currentWorkspace!.id, {
         title: jdTitle,
         originalText: jdText,
@@ -42,7 +45,19 @@ export function JDPanel() {
         tags: result.data.tags,
       });
 
-      message.success('JD 分析完成');
+      // 同时添加到全局 JD Store
+      const jdAnalysis: JDAnalysis = {
+        id: Date.now().toString(),
+        userId: currentWorkspace!.userId,
+        originalText: jdText,
+        summary: result.data.summary,
+        tags: result.data.tags,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      addJD(jdAnalysis);
+
+      message.success('JD 分析完成，已保存到 JD 库');
       setIsModalOpen(false);
       // 下次打开弹窗时重新渲染，达到重置状态的目的
       setModalKey(prev => prev + 1);

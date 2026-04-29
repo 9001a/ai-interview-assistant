@@ -18,8 +18,10 @@ import {
 import { FileTextOutlined, CheckCircleOutlined, ThunderboltOutlined, RocketOutlined } from '@ant-design/icons';
 import { useInterviewStore } from '@/stores/interviewStore';
 import { useAuthStore } from '@/stores/authStore';
+import { useJDStore } from '@/stores/jdStore';
 import { jdApi } from '@/services/api';
 import { JDAnalysisResult } from '@/lib/openai';
+import { JDAnalysis } from '@/types';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -64,6 +66,7 @@ export default function JDPage() {
   const [analysis, setAnalysis] = useState<JDAnalysisResult['summary'] | null>(null);
   const [tags, setTags] = useState<string[]>([]);
   const { setJDAnalysis, jdAnalysis } = useInterviewStore();
+  const { addJD } = useJDStore();
   const { user } = useAuthStore();
 
   const handleAnalyze = async (values: { jdText: string }) => {
@@ -80,7 +83,20 @@ export default function JDPage() {
       if (result.success && result.data && result.data.summary) {
         setAnalysis(result.data.summary);
         setTags(result.data.tags);
-        message.success('分析完成！');
+        
+        // 保存到全局 JD Store
+        const jdAnalysis: JDAnalysis = {
+          id: Date.now().toString(),
+          userId: user?.id || 'guest',
+          originalText: values.jdText,
+          summary: result.data.summary,
+          tags: result.data.tags,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+        addJD(jdAnalysis);
+        
+        message.success('分析完成！已保存到 JD 库');
       } else {
         message.error('返回数据格式错误');
       }

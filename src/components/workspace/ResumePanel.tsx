@@ -16,9 +16,9 @@ import {
   ExclamationCircleOutlined,
 } from '@ant-design/icons';
 import { useWorkspaceStore } from '@/stores/workspaceStore';
-
+import { useResumeStore } from '@/stores/resumeStore';
 import { resumeApi } from '@/services/api';
-import { WorkspaceResume } from '@/types';
+import { WorkspaceResume, Resume } from '@/types';
 
 const { Text, Title, Paragraph } = Typography;
 const { Dragger } = Upload;
@@ -26,6 +26,7 @@ const { TextArea } = Input;
 
 export function ResumePanel() {
   const { currentWorkspace, addResumeToWorkspace, removeResumeFromWorkspace, selectResume, selectedResume, getSelectedJDs, addOptimization } = useWorkspaceStore();
+  const { addResume } = useResumeStore();
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [isOptimizeModalOpen, setIsOptimizeModalOpen] = useState(false);
   const [isResultModalOpen, setIsResultModalOpen] = useState(false);
@@ -69,6 +70,7 @@ export function ResumePanel() {
       return;
     }
 
+    // 添加到工作区
     addResumeToWorkspace(currentWorkspace!.id, {
       title: resumeTitle,
       content: fileContent,
@@ -76,9 +78,22 @@ export function ResumePanel() {
       fileType: 'pdf',
     });
 
+    // 同时添加到全局简历 Store
+    const resume: Resume = {
+      id: Date.now().toString(),
+      userId: currentWorkspace!.userId,
+      title: resumeTitle,
+      content: fileContent,
+      summary: fileContent.slice(0, 100) + '...',
+      fileType: 'pdf',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    addResume(resume);
+
     setResumeTitle('');
     setFileContent('');
-    message.success('简历添加成功');
+    message.success('简历添加成功，已保存到简历库');
   };
 
   const handleOptimize = async () => {

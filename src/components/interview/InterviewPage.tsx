@@ -13,6 +13,8 @@ import { useInterviewStore } from '@/stores/interviewStore';
 import { useHistoryStore } from '@/stores/historyStore';
 import { usePageStore } from '@/stores/pageStore';
 import { useWorkspaceStore } from '@/stores/workspaceStore';
+import { useJDStore } from '@/stores/jdStore';
+import { useResumeStore } from '@/stores/resumeStore';
 import InterviewSetup from './InterviewSetup';
 import InterviewChat from './InterviewChat';
 import type { JDAnalysis, Resume, KnowledgeDocument, ChatMessage, WorkspaceJD, WorkspaceResume } from '@/types';
@@ -51,6 +53,8 @@ export default function InterviewPage() {
   } = usePageStore();
   
   const { currentWorkspace, workspaces, updateInterview } = useWorkspaceStore();
+  const { jdList } = useJDStore();
+  const { resumes } = useResumeStore();
 
   // Local state
   const [lastQuestion, setLastQuestion] = useState<string>('');
@@ -142,39 +146,31 @@ export default function InterviewPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages, isWorkspaceInterview, currentInterviewWorkspaceId, currentInterviewId]);
 
-  // Load options
+  // Load options from global stores
   useEffect(() => {
-    // Mock options - in real app, would load from stores
-    const mockJd: JDAnalysis = {
-      id: '1',
-      userId: '1',
-      originalText: '后端开发工程师...',
-      summary: {
-        overview: '需要后端开发工程师...',
-        hiddenRequirements: '需要良好的沟通能力...',
-        dailyWork: '负责后端服务开发...',
-        prospects: '团队发展潜力大...',
-      },
-      tags: ['Java', 'Spring', '后端'],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
+    // Load JD options from global jdStore (filter out items without id)
+    const jdOpts = jdList
+      .filter((jd): jd is JDAnalysis & { id: string } => !!jd.id)
+      .map((jd) => ({
+        value: jd.id,
+        label: jd.summary.overview.slice(0, 50) || '未命名JD',
+        jd,
+      }));
+    setJdOptions(jdOpts);
 
-    const mockResume: Resume = {
-      id: '1',
-      userId: '1',
-      title: 'Java工程师简历',
-      content: '我是一名后端开发工程师...',
-      summary: '有3年Java开发经验...',
-      fileType: 'pdf',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
+    // Load Resume options from global resumeStore (filter out items without id)
+    const resumeOpts = resumes
+      .filter((resume): resume is Resume & { id: string } => !!resume.id)
+      .map((resume) => ({
+        value: resume.id,
+        label: resume.title,
+        resume,
+      }));
+    setResumeOptions(resumeOpts);
 
-    setJdOptions([{ value: '1', label: '后端开发工程师', jd: mockJd }]);
-    setResumeOptions([{ value: '1', label: 'Java工程师简历', resume: mockResume }]);
+    // Mock KB options for now
     setKbOptions([{ value: '1', label: '后端面试题库', kb: { id: '1', userId: '1', title: '后端面试题库', sourceType: 'question_bank', createdAt: new Date().toISOString() } }]);
-  }, []);
+  }, [jdList, resumes]);
 
   // Start interview
   const handleStart = async (config: {

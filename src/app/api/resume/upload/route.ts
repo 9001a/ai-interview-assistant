@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { parseResume } from '@/lib/resume-parser';
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,34 +14,26 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 模拟简历解析（实际开发中调用文件解析库）
     let resumeContent = text || '';
     let filename = '直接粘贴';
 
+    // 如果是文件，解析文件内容
     if (file) {
       filename = file.name;
-      
-      // 模拟文件解析
-      resumeContent = `
-姓名：张三
-邮箱：zhangsan@example.com
-电话：13800138000
 
-教育背景：
-- 北京大学 计算机科学与技术 本科 2018-2022
+      // 读取文件内容
+      const bytes = await file.arrayBuffer();
+      const buffer = Buffer.from(bytes);
 
-工作经验：
-- 字节跳动 Java后端开发工程师 2022-至今
-  • 负责电商系统后端开发
-  • 参与系统重构，性能提升30%
-  • 使用技术栈：Spring Boot, MySQL, Redis, Kafka
+      // 解析简历
+      resumeContent = await parseResume(buffer, filename);
 
-技能：
-- Java, Python
-- Spring Boot, Spring Cloud
-- MySQL, Redis, MongoDB
-- Kafka, RabbitMQ
-      `.trim();
+      if (!resumeContent.trim()) {
+        return NextResponse.json(
+          { error: '无法从文件中提取文本内容，请检查文件是否包含可读文本' },
+          { status: 400 }
+        );
+      }
     }
 
     return NextResponse.json({

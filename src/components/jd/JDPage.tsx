@@ -106,7 +106,10 @@ export default function JDPage() {
               <Form.Item
                 name="jdText"
                 label="请粘贴岗位描述"
-                rules={[{ required: true, message: '请输入岗位描述' }]}
+                rules={[
+                  { required: true, message: '请输入岗位描述' },
+                  { min: 20, message: '请输入有效的岗位描述（至少20个字）' }
+                ]}
               >
                 <TextArea
                   rows={16}

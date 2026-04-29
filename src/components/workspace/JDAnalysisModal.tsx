@@ -38,17 +38,6 @@ export function JDAnalysisModal({ open, onCancel, onAnalyze, loading }: JDAnalys
     onAnalyze(jdText, title);
   };
 
-  const resetState = () => {
-    setJdText('');
-    setJdTitle('');
-  };
-
-  React.useEffect(() => {
-    if (open) {
-      resetState();
-    }
-  }, [open]);
-
   const handleUseSample = () => {
     setJdText(sampleJD);
   };

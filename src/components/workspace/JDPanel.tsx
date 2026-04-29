@@ -23,6 +23,7 @@ export function JDPanel() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [analyzingJD, setAnalyzingJD] = useState<WorkspaceJD | null>(null);
   const [loading, setLoading] = useState(false);
+  const [modalKey, setModalKey] = useState(0);
 
   const handleAnalyze = async (jdText: string, jdTitle: string) => {
     setLoading(true);
@@ -43,6 +44,8 @@ export function JDPanel() {
 
       message.success('JD 分析完成');
       setIsModalOpen(false);
+      // 下次打开弹窗时重新渲染，达到重置状态的目的
+      setModalKey(prev => prev + 1);
     } catch (error: any) {
       message.error(error.response?.data?.error || 'JD 分析失败，请重试');
       console.error(error);
@@ -82,7 +85,11 @@ export function JDPanel() {
         <Button
           type="primary"
           icon={<PlusOutlined />}
-          onClick={() => setIsModalOpen(true)}
+          onClick={() => {
+            // 打开弹窗前先重置 key，确保重新渲染
+            setModalKey(prev => prev + 1);
+            setIsModalOpen(true);
+          }}
           className="bg-[#e1b382] hover:bg-[#d4a375] border-[#e1b382]"
         >
           添加 JD
@@ -103,7 +110,11 @@ export function JDPanel() {
             <Button
               type="primary"
               icon={<PlusOutlined />}
-              onClick={() => setIsModalOpen(true)}
+              onClick={() => {
+                // 打开弹窗前先重置 key，确保重新渲染
+                setModalKey(prev => prev + 1);
+                setIsModalOpen(true);
+              }}
               className="bg-[#e1b382] hover:bg-[#d4a375] border-[#e1b382]"
             >
               添加第一个 JD
@@ -186,8 +197,13 @@ export function JDPanel() {
       )}
 
       <JDAnalysisModal
+        key={modalKey}
         open={isModalOpen}
-        onCancel={() => setIsModalOpen(false)}
+        onCancel={() => {
+          setIsModalOpen(false);
+          // 取消时也重置 key，下次打开重新渲染
+          setModalKey(prev => prev + 1);
+        }}
         onAnalyze={handleAnalyze}
         loading={loading}
       />

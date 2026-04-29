@@ -46,19 +46,19 @@ export function OptimizationPanel() {
       </div>
 
       <Timeline
-        mode="left"
+        mode="start"
         items={currentWorkspace.optimizations.map((opt) => {
           const resume = currentWorkspace.resumes.find((r) => r.id === opt.resumeId);
           const jds = currentWorkspace.jdList.filter((jd) => opt.jdIds.includes(jd.id));
 
           return {
             color: '#e1b382',
-            label: (
+            title: (
               <Text type="secondary" className="text-xs">
                 {new Date(opt.createdAt).toLocaleString()}
               </Text>
             ),
-            children: (
+            content: (
               <Card
                 size="small"
                 className="mb-4 hover:shadow-md transition-shadow"

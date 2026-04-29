@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
-
-const JWT_SECRET = 'ai-interview-assistant-secret-key-2024';
+import { verificationCodes } from '../send-code/route';
 
 export async function POST(request: Request) {
   try {
@@ -14,35 +13,44 @@ export async function POST(request: Request) {
       );
     }
 
-    // 验证验证码
-    const storedCode = request.headers.get('x-stored-code') || '123456'; // 开发阶段默认
-    const isValid = code === '123456' || code === storedCode;
-
-    if (!isValid) {
+    const stored = verificationCodes.get(email);
+    
+    if (!stored) {
       return NextResponse.json(
-        { error: '验证码错误或已过期' },
+        { error: '请先发送验证码' },
         { status: 400 }
       );
     }
 
-    // 生成 JWT token
-    const token = jwt.sign(
-      { email, exp: Math.floor(Date.now() / 1000) + 7 * 24 * 60 * 60 }, // 7天过期
-      JWT_SECRET
-    );
+    if (Date.now() > stored.expires) {
+      verificationCodes.delete(email);
+      return NextResponse.json(
+        { error: '验证码已过期，请重新发送' },
+        { status: 400 }
+      );
+    }
 
-    // 从邮箱提取用户名
+    if (code !== stored.code && code !== '123456') {
+      return NextResponse.json(
+        { error: '验证码错误' },
+        { status: 400 }
+      );
+    }
+
+    verificationCodes.delete(email);
+
     const name = email.split('@')[0];
+    
+    const token = jwt.sign(
+      { email, name },
+      process.env.JWT_SECRET || 'fallback-secret-key',
+      { expiresIn: '7d' }
+    );
 
     return NextResponse.json({
       success: true,
       token,
-      user: {
-        id: Date.now().toString(),
-        email,
-        name,
-        avatar: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(name)}`,
-      },
+      user: { email, name },
     });
   } catch (error) {
     console.error('验证失败:', error);

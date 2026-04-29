@@ -59,6 +59,8 @@ export default function InterviewPage() {
   // Local state
   const [lastQuestion, setLastQuestion] = useState<string>('');
   const [isWorkspaceInterview, setIsWorkspaceInterview] = useState(false);
+  const [loadError, setLoadError] = useState<string>('');
+  const [isLoadingWorkspace, setIsLoadingWorkspace] = useState(false);
 
   // Options for setup modal
   const [jdOptions, setJdOptions] = useState<Array<{ value: string; label: string; jd: JDAnalysis; source: 'global' | 'workspace' }>>([]);
@@ -66,16 +68,25 @@ export default function InterviewPage() {
   const [kbOptions, setKbOptions] = useState<Array<{ value: string; label: string; kb: KnowledgeDocument }>>([]);
 
   // Check if this is a workspace interview
-  // 注意：使用 ref 获取最新的 workspaces，避免依赖 workspaces 导致循环
-  const workspacesRef = useRef(workspaces);
-  workspacesRef.current = workspaces;
-  
   useEffect(() => {
     if (currentInterviewId && currentInterviewWorkspaceId) {
-      const workspace = workspacesRef.current.find(w => w.id === currentInterviewWorkspaceId);
+      setIsLoadingWorkspace(true);
+      setLoadError('');
+      
+      const workspace = workspaces.find(w => w.id === currentInterviewWorkspaceId);
       const interview = workspace?.interviews.find(i => i.id === currentInterviewId);
       
+      console.log('[InterviewPage] 加载工作区面试:', { 
+        currentInterviewId, 
+        currentInterviewWorkspaceId, 
+        workspaceFound: !!workspace, 
+        interviewFound: !!interview,
+        interviewStatus: interview?.status,
+        workspacesCount: workspaces.length
+      });
+      
       if (workspace && interview) {
+        setIsLoadingWorkspace(false);
         setIsWorkspaceInterview(true);
         
         // Convert workspace JD/resume to JDAnalysis/Resume format
@@ -120,8 +131,8 @@ export default function InterviewPage() {
         
         setInterviewerConfig(interview.interviewerConfig);
         
-        // If interview is ongoing, start it
-        if (interview.status === 'ongoing') {
+        // If interview is ongoing or paused, start it
+        if (interview.status === 'ongoing' || interview.status === 'paused') {
           setIsStarted(true);
           // 如果有已保存的消息，加载它们
           if (interview.messages && interview.messages.length > 0) {
@@ -129,7 +140,8 @@ export default function InterviewPage() {
             interview.messages.forEach((msg: any) => {
               addMessage(msg);
             });
-          } else {
+            console.log('[InterviewPage] 已加载消息数量:', interview.messages.length);
+          } else if (interview.status === 'ongoing') {
             // 否则生成第一个问题
             clearMessages();
             generateFirstQuestion(
@@ -137,15 +149,6 @@ export default function InterviewPage() {
               convertedResume, 
               interview.interviewerConfig
             );
-          }
-        } else if (interview.status === 'paused') {
-          // 如果是暂停状态，加载已有消息
-          setIsStarted(true);
-          if (interview.messages && interview.messages.length > 0) {
-            clearMessages();
-            interview.messages.forEach((msg: any) => {
-              addMessage(msg);
-            });
           }
         } else if (interview.status === 'completed') {
           // 如果是已完成状态，只加载消息（不开始新面试）
@@ -159,9 +162,23 @@ export default function InterviewPage() {
           // 未开始状态，显示配置界面
           setIsStarted(false);
         }
+      } else {
+        setIsLoadingWorkspace(false);
+        setLoadError('未找到工作区或面试数据，请返回工作区重新选择');
+        console.warn('[InterviewPage] 未找到工作区或面试:', { 
+          currentInterviewId, 
+          currentInterviewWorkspaceId,
+          workspaces: workspaces.map(w => ({ id: w.id, name: w.name, interviewsCount: w.interviews?.length || 0 }))
+        });
       }
+    } else {
+      setIsLoadingWorkspace(false);
     }
-  }, [currentInterviewId, currentInterviewWorkspaceId]);
+  }, [currentInterviewId, currentInterviewWorkspaceId, workspaces]); // eslint-disable-line react-hooks/exhaustive-deps
+  // 注意：依赖 workspaces 是为了确保工作区数据加载后能重新执行
+  // clearMessages, addMessage, generateFirstQuestion 是稳定的 store 方法
+  // setJDAnalysis, setSelectedResume, setInterviewerConfig, setIsStarted, setIsWorkspaceInterview 也是稳定的
+  // 但为了安全，只包含必要的依赖项，避免循环依赖导致的无限渲染问题。
 
   // 快速面试时重置 interviewStore
   useEffect(() => {
@@ -441,6 +458,20 @@ export default function InterviewPage() {
               resumeOptions={resumeOptions}
               knowledgeBaseOptions={kbOptions}
             />
+          ) : loadError ? (
+            <Card style={{ borderRadius: 16 }}>
+              <div style={{ textAlign: 'center', padding: '60px 24px' }}>
+                <Title level={3} style={{ marginBottom: 16, color: '#ff4d4f' }}>
+                  加载失败
+                </Title>
+                <Text type="secondary" style={{ fontSize: 16, display: 'block', marginBottom: 32 }}>
+                  {loadError}
+                </Text>
+                <Button type="primary" onClick={handleBackToWorkspace}>
+                  返回工作区
+                </Button>
+              </div>
+            </Card>
           ) : (
             <Card style={{ borderRadius: 16 }}>
               <div style={{ textAlign: 'center', padding: '60px 24px' }}>

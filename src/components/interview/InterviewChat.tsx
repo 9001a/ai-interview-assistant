@@ -147,7 +147,7 @@ export default function InterviewChat({
             style={{ flex: 1 }}
             disabled={isLoading}
           />
-          <Space direction="vertical" style={{ height: '100%' }}>
+          <Space orientation="vertical" style={{ height: '100%' }}>
             <Button
               type="primary"
               icon={<SendOutlined />}

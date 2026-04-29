@@ -208,7 +208,7 @@ export default function InterviewPanel() {
         {currentWorkspace.interviews.length === 0 ? (
           <Empty
             description={
-              <Space direction="vertical" size="small">
+              <Space orientation="vertical" size="small">
                 <Text type="secondary">暂无面试记录</Text>
                 <Text type="secondary" style={{ fontSize: 12 }}>
                   先添加JD和简历，然后开始面试

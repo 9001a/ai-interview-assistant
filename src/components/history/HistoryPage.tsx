@@ -143,7 +143,7 @@ export default function HistoryPage() {
             <Text type="secondary">暂无历史记录</Text>
           </div>
         ) : (
-          <Space direction="vertical" style={{ width: '100%' }} size="middle">
+          <Space orientation="vertical" style={{ width: '100%' }} size="middle">
             {filteredRecords.map((record) => (
               <Card
                 key={record.id}

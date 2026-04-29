@@ -133,7 +133,7 @@ export default function KnowledgePage() {
                       </div>
                     </Col>
                     <Col flex="auto">
-                      <Space direction="vertical" size={4} style={{ width: '100%' }}>
+                      <Space orientation="vertical" size={4} style={{ width: '100%' }}>
                         <Space>
                           <Text strong style={{ fontSize: 15 }}>{item.title}</Text>
                           <Tag color={tagInfo.color}>{tagInfo.text}</Tag>

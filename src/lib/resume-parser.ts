@@ -1,5 +1,7 @@
-import pdf from 'pdf-parse';
-import mammoth from 'mammoth';
+import * as pdfParse from 'pdf-parse';
+import * as mammoth from 'mammoth';
+
+const pdf = (pdfParse as any).default || pdfParse; // 兼容 CommonJS/ESM 导入方式
 
 /**
  * 解析 PDF 简历

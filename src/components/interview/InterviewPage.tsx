@@ -73,6 +73,18 @@ export default function InterviewPage() {
       setIsLoadingWorkspace(true);
       setLoadError('');
       
+      // 如果 InterviewStore 中已经有消息记录，说明 InterviewPanel 已经设置好了，直接使用
+      if (messages.length > 0 && currentInterviewId) {
+        console.log('[InterviewPage] 使用 InterviewStore 中的现有消息:', {
+          messageCount: messages.length,
+          currentInterviewId
+        });
+        setIsLoadingWorkspace(false);
+        setIsWorkspaceInterview(true);
+        setIsStarted(true);
+        return;
+      }
+
       const workspace = workspaces.find(w => w.id === currentInterviewWorkspaceId);
       const interview = workspace?.interviews.find(i => i.id === currentInterviewId);
       

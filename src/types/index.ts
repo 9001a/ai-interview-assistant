@@ -190,6 +190,7 @@ export interface Workspace {
   userId: string;
   name: string;
   type: WorkspaceType;
+  customDescription?: string;
   jdList: WorkspaceJD[];
   resumes: WorkspaceResume[];
   optimizations: WorkspaceOptimization[];

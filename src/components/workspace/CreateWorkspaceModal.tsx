@@ -12,7 +12,7 @@ const { Option } = Select;
 interface CreateWorkspaceModalProps {
   open: boolean;
   onCancel: () => void;
-  onCreate: (name: string, type: WorkspaceType) => void;
+  onCreate: (name: string, type: WorkspaceType, customDescription?: string) => void;
 }
 
 const workspaceTypes = [
@@ -31,8 +31,8 @@ export function CreateWorkspaceModal({ open, onCancel, onCreate }: CreateWorkspa
   const handleOk = async () => {
     try {
       const values = await form.validateFields();
-      createWorkspace(values.name, values.type);
-      onCreate(values.name, values.type);
+      createWorkspace(values.name, values.type, values.customDescription);
+      onCreate(values.name, values.type, values.customDescription);
       form.resetFields();
     } catch (error) {
       console.error('Form validation failed:', error);
@@ -90,6 +90,24 @@ export function CreateWorkspaceModal({ open, onCancel, onCreate }: CreateWorkspa
             ))}
           </Select>
         </Form.Item>
+
+        {selectedType === 'custom' && (
+          <Form.Item
+            label="自定义工作区描述"
+            name="customDescription"
+            rules={[
+              { required: true, message: '请描述一下这个工作区是做什么的' },
+              { max: 200, message: '描述最多 200 个字符' },
+            ]}
+          >
+            <Input.TextArea 
+              rows={4} 
+              placeholder="例如：AI 产品经理、运维工程师、数据分析师等" 
+              showCount
+              maxLength={200}
+            />
+          </Form.Item>
+        )}
 
         <div className="bg-[#fef9f3] p-3 rounded-md">
           <Text type="secondary" className="text-sm">

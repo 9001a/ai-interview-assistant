@@ -11,7 +11,7 @@ interface WorkspaceState {
   // Actions
   setWorkspaces: (workspaces: Workspace[]) => void;
   setCurrentWorkspace: (workspace: Workspace | null) => void;
-  createWorkspace: (name: string, type: WorkspaceType) => Workspace;
+  createWorkspace: (name: string, type: WorkspaceType, customDescription?: string) => Workspace;
   updateWorkspace: (id: string, updates: Partial<Workspace>) => void;
   deleteWorkspace: (id: string) => void;
 
@@ -68,12 +68,13 @@ export const useWorkspaceStore = create<WorkspaceState>()(
         });
       },
 
-      createWorkspace: (name, type) => {
+      createWorkspace: (name, type, customDescription) => {
         const workspace: Workspace = {
           id: generateId(),
           userId: '', // Will be set when user creates
           name,
           type,
+          customDescription,
           jdList: [],
           resumes: [],
           optimizations: [],

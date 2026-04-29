@@ -53,7 +53,7 @@ export default function WorkspacePage() {
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
-  const handleCreateWorkspace = (name: string, type: WorkspaceType) => {
+  const handleCreateWorkspace = (name: string, type: WorkspaceType, customDescription?: string) => {
     setIsCreateModalOpen(false);
     message.success('工作区创建成功');
   };
@@ -122,7 +122,14 @@ export default function WorkspacePage() {
                       <div className="flex justify-between items-start">
                         <div>
                           <Title level={5} className="!mb-0 !text-base">{workspace.name}</Title>
-                          <Tag color={typeInfo.color} className="mt-2">{typeInfo.label}</Tag>
+                          <div className="mt-2 space-y-1">
+                            <Tag color={typeInfo.color}>{typeInfo.label}</Tag>
+                            {workspace.type === 'custom' && workspace.customDescription && (
+                              <Text type="secondary" className="block text-xs">
+                                {workspace.customDescription}
+                              </Text>
+                            )}
+                          </div>
                         </div>
                         <Badge
                           status={statusInfo.color as any}

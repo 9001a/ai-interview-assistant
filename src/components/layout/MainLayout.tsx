@@ -1,7 +1,7 @@
 'use client';
 
 import { Layout, Menu, Typography, Button } from 'antd';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   FolderOutlined,
   FileTextOutlined,
@@ -13,6 +13,7 @@ import {
 } from '@ant-design/icons';
 import { useAuthStore } from '@/stores/authStore';
 import { useInterviewStore } from '@/stores/interviewStore';
+import { usePageStore } from '@/stores/pageStore';
 import WorkspacePage from '@/components/workspace/WorkspacePage';
 import JDPage from '@/components/jd/JDPage';
 import ResumePage from '@/components/resume/ResumePage';
@@ -29,7 +30,7 @@ type PageType = 'workspace' | 'jd' | 'resume' | 'interview' | 'history' | 'knowl
 export default function MainLayout() {
   const { logout } = useAuthStore();
   const { resetInterview } = useInterviewStore();
-  const [currentPage, setCurrentPage] = useState<PageType>('workspace');
+  const { currentPage, setCurrentPage } = usePageStore();
   const [collapsed, setCollapsed] = useState(false);
 
   const menuItems = [

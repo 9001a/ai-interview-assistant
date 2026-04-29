@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { ConfigProvider, theme, Spin } from 'antd';
+import { ConfigProvider, theme, Spin, App } from 'antd';
 import { warmYellowThemeToken } from '@/theme/antd-theme';
 import { useAuthStore } from '@/stores/authStore';
 import Login from '@/components/auth/Login';
@@ -24,11 +24,11 @@ export default function Home() {
 
   if (!isHydrated) {
     return (
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        height: '100vh' 
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: '100vh'
       }}>
         <Spin size="large" />
       </div>
@@ -45,7 +45,9 @@ export default function Home() {
           token: warmYellowThemeToken,
         }}
       >
-        <Login />
+        <App>
+          <Login />
+        </App>
       </ConfigProvider>
     );
   }
@@ -57,7 +59,9 @@ export default function Home() {
         token: warmYellowThemeToken,
       }}
     >
-      <MainLayout />
+      <App>
+        <MainLayout />
+      </App>
     </ConfigProvider>
   );
 }

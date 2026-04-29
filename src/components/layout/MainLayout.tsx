@@ -33,7 +33,7 @@ type PageType = 'workspace' | 'jd' | 'resume' | 'interview' | 'interview_report'
 export default function MainLayout() {
   const { logout } = useAuthStore();
   const { resetInterview } = useInterviewStore();
-  const { currentPage, setCurrentPage } = usePageStore();
+  const { currentPage, setCurrentPage, setCurrentInterview } = usePageStore();
   const [collapsed, setCollapsed] = useState(false);
 
   const menuItems = [
@@ -70,6 +70,10 @@ export default function MainLayout() {
   ];
 
   const handlePageChange = (key: string) => {
+    // 如果切换到快速面试，清除工作区相关的面试状态
+    if (key === 'interview') {
+      setCurrentInterview(null, null);
+    }
     setCurrentPage(key as PageType);
   };
 

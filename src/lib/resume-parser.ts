@@ -1,14 +1,12 @@
-import * as pdfParse from 'pdf-parse';
-import * as mammoth from 'mammoth';
-
-const pdf = (pdfParse as any).default || pdfParse; // 兼容 CommonJS/ESM 导入方式
+import { PDFParse } from 'pdf-parse';
+import mammoth from 'mammoth';
 
 /**
  * 解析 PDF 简历
  */
 export async function parsePDF(buffer: Buffer): Promise<string> {
   try {
-    const data = await pdf(buffer);
+    const data = await PDFParse(buffer);
     return data.text.trim();
   } catch (error) {
     console.error('PDF parse error:', error);

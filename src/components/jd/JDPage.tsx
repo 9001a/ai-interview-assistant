@@ -188,27 +188,24 @@ export default function JDPage() {
                   正在从四个维度深入分析...
                 </div>
               </div>
-            ) : analysis || jdAnalysis ? (
+            ) : (
               <Tabs
-                items={JD_TAB_ITEMS}
                 defaultActiveKey="overview"
                 className="warm-tabs"
                 items={JD_TAB_ITEMS.map((item) => ({
                   ...item,
-                  children: (
+                  children: analysis || jdAnalysis?.analysis ? (
                     <div className="whitespace-pre-wrap p-4 bg-amber-50 rounded-lg">
                       {(analysis || jdAnalysis?.analysis)?.[item.key] || '暂无内容'}
+                    </div>
+                  ) : (
+                    <div className="text-center py-16">
+                      <div className="text-4xl mb-4">📝</div>
+                      <Text type="secondary">请先粘贴岗位描述并点击分析</Text>
                     </div>
                   ),
                 }))}
               />
-            ) : (
-              <div className="text-center py-16">
-                <div className="text-5xl mb-4">📄</div>
-                <Text type="secondary">
-                  请先在左侧粘贴岗位描述并点击分析
-                </Text>
-              </div>
             )}
           </Card>
         </Col>

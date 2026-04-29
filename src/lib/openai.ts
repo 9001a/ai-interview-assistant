@@ -5,6 +5,9 @@ const openai = new OpenAI({
   baseURL: process.env.OPENAI_API_BASE,
 });
 
+// 模拟模式：当 OpenAI API 不可用时使用
+const isMockMode = !process.env.OPENAI_API_KEY || process.env.USE_MOCK_AI === 'true';
+
 export interface JDAnalysisResult {
   summary: {
     overview: string;
@@ -154,12 +157,31 @@ ${resumeContent}
   }
 }
 
+const mockQuestions = [
+  '请先简单介绍一下自己？',
+  '你在这个项目中主要负责什么？',
+  '能详细说一下你解决过的一个技术难题吗？',
+  '你为什么想要加入我们公司？',
+  '你对我们这个岗位了解多少？',
+  '你在团队协作中通常扮演什么角色？',
+  '你未来的职业规划是什么？',
+  '你觉得自己最大的优势和不足是什么？',
+  '有什么想要问我的吗？',
+];
+
 export async function generateInterviewQuestion(
   jdAnalysis: any,
   resume: any,
   interviewerConfig: any,
   previousMessages: any[]
 ): Promise<string> {
+  // 模拟模式：直接返回模拟问题
+  if (isMockMode) {
+    await new Promise(resolve => setTimeout(resolve, 1000)); // 模拟网络延迟
+    const index = Math.min(previousMessages.length / 2, mockQuestions.length - 1);
+    return mockQuestions[Math.floor(index)] || mockQuestions[mockQuestions.length - 1];
+  }
+
   const jdSummary = jdAnalysis ? JSON.stringify(jdAnalysis) : '';
   const resumeContent = resume?.content || resume?.summary || '';
   
@@ -208,6 +230,14 @@ ${previousMessages.map(m => `${m.role}: ${m.content}`).join('\n')}
   }
 }
 
+const mockFeedbacks = [
+  { feedback: '回答得很好，思路清晰，能够突出重点。', score: 90, nextQuestion: '能具体说说你是如何协调团队资源的吗？' },
+  { feedback: '回答不错，但可以更具体一些，多举一些实际例子。', score: 75, nextQuestion: '你在这个项目中遇到过什么困难？怎么解决的？' },
+  { feedback: '回答比较笼统，建议结合具体案例来阐述。', score: 60, nextQuestion: '如果让你重新做这个项目，你会怎么改进？' },
+  { feedback: '挺好的回答，展现了你的思考能力。', score: 85, nextQuestion: '你对未来的技术发展有什么看法？' },
+  { feedback: '回答有亮点，但还需要更多实践经验支撑。', score: 70, nextQuestion: '说说你最自豪的一个项目成果吧。' },
+];
+
 export async function evaluateAnswer(
   userAnswer: string,
   lastQuestion: string,
@@ -219,6 +249,17 @@ export async function evaluateAnswer(
   nextQuestion: string;
   shouldContinue: boolean;
 }> {
+  // 模拟模式
+  if (isMockMode) {
+    await new Promise(resolve => setTimeout(resolve, 1000)); // 模拟网络延迟
+    const mockIndex = Math.floor(Math.random() * mockFeedbacks.length);
+    const mock = mockFeedbacks[mockIndex];
+    return {
+      ...mock,
+      shouldContinue: true,
+    };
+  }
+
   const jdSummary = jdAnalysis ? JSON.stringify(jdAnalysis) : '';
   
   const prompt = `

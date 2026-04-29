@@ -346,7 +346,12 @@ export default function InterviewPanel() {
                             setInterviewerConfig(interview.interviewerConfig);
                           }
                           
-                          setCurrentInterview(interview.id, currentWorkspace.id);
+                          // 加载历史消息
+                          if (interview.messages && interview.messages.length > 0) {
+                            setMessages(interview.messages);
+                          }
+                          
+                          setCurrentInterview(interview.id, currentWorkspace.id);  
                           setCurrentPage('workspace_interview');
                         }}
                       >

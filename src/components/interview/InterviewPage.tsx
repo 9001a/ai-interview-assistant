@@ -387,12 +387,14 @@ export default function InterviewPage() {
     setIsStarted(false);
     
     if (isWorkspaceInterview && currentInterviewId && currentInterviewWorkspaceId) {
-      // Update workspace interview status
+      // Update workspace interview status - save messages for continue
       const { updateInterview } = useWorkspaceStore.getState();
       updateInterview(currentInterviewWorkspaceId, currentInterviewId, {
-        status: 'completed',
-        score: 0, // Can calculate from messages
-      });
+        status: 'paused',
+        messages: [...messages],
+        turnCount: messages.filter(m => m.role === 'user').length,
+        score: 0,
+      });      
       
       // Save to history
       useHistoryStore.getState().addRecord({

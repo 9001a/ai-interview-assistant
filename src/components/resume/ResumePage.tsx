@@ -218,7 +218,7 @@ export default function ResumePage() {
 
             {resumeContent && (
               <Alert
-                message={
+                title={
                   <Space>
                     <CheckCircleOutlined style={{ color: '#52C41A' }} />
                     <span>已上传：{resumeFilename}</span>

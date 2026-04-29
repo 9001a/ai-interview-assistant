@@ -82,8 +82,12 @@ export default function InterviewPage() {
         const jd = workspace.jdList.find(j => j.id === interview.jdId);
         const resume = workspace.resumes.find(r => r.id === interview.resumeId);
         
+        // 保存转换后的数据供后续使用
+        let convertedJD: JDAnalysis | null = null;
+        let convertedResume: Resume | null = null;
+        
         if (jd) {
-          const mockJdAnalysis: JDAnalysis = {
+          convertedJD = {
             id: jd.id,
             userId: workspace.userId,
             originalText: jd.originalText,
@@ -97,11 +101,11 @@ export default function InterviewPage() {
             createdAt: jd.createdAt,
             updatedAt: jd.createdAt,
           };
-          setJDAnalysis(mockJdAnalysis);
+          setJDAnalysis(convertedJD);
         }
         
         if (resume) {
-          const mockResume: Resume = {
+          convertedResume = {
             id: resume.id,
             userId: workspace.userId,
             title: resume.title,
@@ -111,28 +115,49 @@ export default function InterviewPage() {
             createdAt: resume.createdAt,
             updatedAt: resume.createdAt,
           };
-          setSelectedResume(mockResume);
+          setSelectedResume(convertedResume);
         }
         
         setInterviewerConfig(interview.interviewerConfig);
         
         // If interview is ongoing, start it
         if (interview.status === 'ongoing') {
-          clearMessages();
           setIsStarted(true);
           // 如果有已保存的消息，加载它们
           if (interview.messages && interview.messages.length > 0) {
+            clearMessages();
             interview.messages.forEach((msg: any) => {
               addMessage(msg);
             });
           } else {
             // 否则生成第一个问题
+            clearMessages();
             generateFirstQuestion(
-              jdAnalysis, 
-              selectedResume, 
+              convertedJD, 
+              convertedResume, 
               interview.interviewerConfig
             );
           }
+        } else if (interview.status === 'paused') {
+          // 如果是暂停状态，加载已有消息
+          setIsStarted(true);
+          if (interview.messages && interview.messages.length > 0) {
+            clearMessages();
+            interview.messages.forEach((msg: any) => {
+              addMessage(msg);
+            });
+          }
+        } else if (interview.status === 'completed') {
+          // 如果是已完成状态，只加载消息（不开始新面试）
+          if (interview.messages && interview.messages.length > 0) {
+            clearMessages();
+            interview.messages.forEach((msg: any) => {
+              addMessage(msg);
+            });
+          }
+        } else {
+          // 未开始状态，显示配置界面
+          setIsStarted(false);
         }
       }
     }

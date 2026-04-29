@@ -7,12 +7,21 @@ interface InterviewState {
   jdAnalysis: JDAnalysis | null;
   selectedResume: Resume | null;
   interviewerConfig: InterviewerConfig;
+  // Resume related
+  resumeContent: string;
+  resumeFilename: string;
+  optimizedResume: string;
+  // Actions
   setCurrentSession: (session: InterviewSession | null) => void;
   addMessage: (message: ChatMessage) => void;
   clearMessages: () => void;
   setJDAnalysis: (jd: JDAnalysis | null) => void;
   setSelectedResume: (resume: Resume | null) => void;
   setInterviewerConfig: (config: Partial<InterviewerConfig>) => void;
+  // Resume actions
+  setResumeContent: (content: string) => void;
+  setResumeFilename: (filename: string) => void;
+  setOptimizedResume: (content: string) => void;
   resetInterview: () => void;
 }
 
@@ -44,6 +53,9 @@ export const useInterviewStore = create<InterviewState>((set) => ({
   jdAnalysis: null,
   selectedResume: null,
   interviewerConfig: defaultInterviewerConfig,
+  resumeContent: '',
+  resumeFilename: '',
+  optimizedResume: '',
   setCurrentSession: (session) => set({ currentSession: session }),
   addMessage: (message) =>
     set((state) => ({ messages: [...state.messages, message] })),
@@ -54,6 +66,9 @@ export const useInterviewStore = create<InterviewState>((set) => ({
     set((state) => ({
       interviewerConfig: { ...state.interviewerConfig, ...config },
     })),
+  setResumeContent: (content) => set({ resumeContent: content }),
+  setResumeFilename: (filename) => set({ resumeFilename: filename }),
+  setOptimizedResume: (content) => set({ optimizedResume: content }),
   resetInterview: () =>
     set({
       currentSession: null,
@@ -61,5 +76,8 @@ export const useInterviewStore = create<InterviewState>((set) => ({
       jdAnalysis: null,
       selectedResume: null,
       interviewerConfig: defaultInterviewerConfig,
+      resumeContent: '',
+      resumeFilename: '',
+      optimizedResume: '',
     }),
 }));

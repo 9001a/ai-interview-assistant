@@ -1,268 +1,373 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
-  Card,
-  Form,
-  Input,
-  Button,
-  Typography,
-  Tabs,
-  Upload,
   Row,
   Col,
+  Card,
+  Typography,
+  Button,
+  Upload,
+  Input,
+  Tabs,
+  message,
+  Spin,
   Alert,
   Space,
-  message,
-  Progress,
+  Tag,
 } from 'antd';
-import {
-  FileTextOutlined,
-  CloudUploadOutlined,
-  PaperClipOutlined,
-  EditOutlined,
-  CheckCircleOutlined,
-} from '@ant-design/icons';
-import type { UploadProps } from 'antd';
+import { UploadOutlined, FileTextOutlined, EditOutlined, CheckCircleOutlined } from '@ant-design/icons';
+import type { UploadFile } from 'antd/es/upload/interface';
 import { useInterviewStore } from '@/stores/interviewStore';
-import { resumeApi } from '@/services/api';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
+const { TabPane } = Tabs;
 const { Dragger } = Upload;
 
-const RESUME_TAB_ITEMS = [
-  {
-    key: 'upload',
-    label: (
-      <span>
-        <CloudUploadOutlined /> 文件上传
-      </span>
-    ),
-  },
-  {
-    key: 'paste',
-    label: (
-      <span>
-        <EditOutlined /> 直接粘贴
-      </span>
-    ),
-  },
-];
-
 export default function ResumePage() {
-  const [loading, setLoading] = useState(false);
-  const [resumeText, setResumeText] = useState('');
-  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const { setResume, resume, jdAnalysis } = useInterviewStore();
+  const [activeTab, setActiveTab] = useState('upload');
+  const [fileList, setFileList] = useState<UploadFile[]>([]);
+  const [pastedContent, setPastedContent] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const [optimizing, setOptimizing] = useState(false);
+  
+  const { 
+    resumeContent, 
+    setResumeContent,
+    jdAnalysis,
+    optimizedResume,
+    setOptimizedResume,
+    resumeFilename,
+    setResumeFilename,
+  } = useInterviewStore();
 
-  // 简历解析
-  const handleUpload = async (values: { resumeText: string }) => {
-    if (!values.resumeText.trim()) {
-      message.warning('请上传简历或粘贴简历内容');
+  const handleUpload = useCallback(async () => {
+    if (fileList.length === 0 && !pastedContent.trim()) {
+      message.warning('请上传文件或粘贴简历内容');
       return;
     }
 
-    setLoading(true);
+    setUploading(true);
     try {
-      const res = await resumeApi.parse(values.resumeText);
-      
-      if (res.content) {
-        setResume(res.content);
-        setResumeText(res.content);
-        message.success('简历已保存！');
+      const formData = new FormData();
+      if (fileList.length > 0 && fileList[0].originFileObj) {
+        formData.append('file', fileList[0].originFileObj);
       }
-    } catch (error: any) {
-      message.error(error.response?.data?.error || '解析失败');
+      if (pastedContent.trim()) {
+        formData.append('text', pastedContent);
+      }
+
+      const response = await fetch('/api/resume/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        setResumeContent(result.content);
+        setResumeFilename(result.filename);
+        message.success('简历上传成功！');
+      } else {
+        message.error(result.error || '上传失败');
+      }
+    } catch (error) {
+      console.error('上传失败:', error);
+      message.error('上传失败，请重试');
     } finally {
-      setLoading(false);
+      setUploading(false);
     }
-  };
+  }, [fileList, pastedContent, setResumeContent, setResumeFilename]);
 
-  // 文件上传属性
-  const uploadProps: UploadProps = {
-    name: 'file',
-    multiple: false,
-    accept: '.pdf,.docx,.doc',
-    beforeUpload: async (file) => {
-      const isPDF = file.type === 'application/pdf';
-      const isWord =
-        file.type ===
-          'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
-        file.type === 'application/msword';
+  const handleOptimize = useCallback(async () => {
+    if (!resumeContent) {
+      message.warning('请先上传简历');
+      return;
+    }
 
-      if (!isPDF && !isWord) {
-        message.error('只支持 PDF 或 Word 文件');
-        return Upload.LIST_IGNORE;
-      }
+    if (!jdAnalysis) {
+      message.warning('请先进行JD分析，这样AI才能针对性优化简历');
+      return;
+    }
 
-      const isLt10M = file.size / 1024 / 1024 < 10;
-      if (!isLt10M) {
-        message.error('文件大小不能超过 10MB');
-        return Upload.LIST_IGNORE;
-      }
+    setOptimizing(true);
+    try {
+      const response = await fetch('/api/resume/optimize', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          resumeContent,
+          jdAnalysis,
+        }),
+      });
 
-      setUploadedFile(file);
-      setLoading(true);
+      const result = await response.json();
       
-      try {
-        const res = await resumeApi.upload(file);
-        if (res.content) {
-          setResumeText(res.content);
-          message.success('简历已解析！');
-        }
-      } catch (error: any) {
-        message.error(error.response?.data?.error || '文件解析失败');
-      } finally {
-        setLoading(false);
+      if (result.success) {
+        setOptimizedResume(result.optimizedContent);
+        message.success('简历优化完成！');
+      } else {
+        message.error(result.error || '优化失败');
+      }
+    } catch (error) {
+      console.error('优化失败:', error);
+      message.error('优化失败，请重试');
+    } finally {
+      setOptimizing(false);
+    }
+  }, [resumeContent, jdAnalysis, setOptimizedResume]);
+
+  const uploadProps = {
+    onRemove: () => {
+      setFileList([]);
+    },
+    beforeUpload: (file: File) => {
+      const isPDF = file.type === 'application/pdf';
+      const isWord = file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+                     file.type === 'application/msword';
+      
+      if (!isPDF && !isWord) {
+        message.error('只支持 PDF 或 Word 文件！');
+        return Upload.LIST_IGNORE;
       }
 
+      const isLt5M = file.size / 1024 / 1024 < 5;
+      if (!isLt5M) {
+        message.error('文件大小不能超过 5MB！');
+        return Upload.LIST_IGNORE;
+      }
+
+      setFileList([{ uid: file.name, name: file.name, status: 'done', originFileObj: file }]);
       return false;
     },
+    fileList,
   };
 
   return (
-    <div className="p-6">
-      <Row gutter={[24, 24]}>
-        {/* 左侧：简历输入 */}
-        <Col xs={24} lg={12}>
+    <div className="h-full">
+      <Row gutter={24} className="h-full">
+        {/* 左侧：上传区域 */}
+        <Col span={12} className="h-full">
           <Card
-            title="📄 简历输入"
+            title={
+              <Space>
+                <FileTextOutlined style={{ color: '#F5A623' }} />
+                <span style={{ color: '#5C4A32' }}>上传简历</span>
+              </Space>
+            }
             className="h-full"
-            styles={{ header: { backgroundColor: '#FFF8E7' } }}
+            style={{
+              background: '#FFF8E7',
+              borderRadius: 16,
+              border: '1px solid #E8DFD0',
+            }}
+            bodyStyle={{ height: 'calc(100% - 57px)', overflow: 'auto' }}
           >
             <Tabs
-              defaultActiveKey="upload"
-              items={RESUME_TAB_ITEMS.map((item) => ({
-                ...item,
-                children: (
-                  item.key === 'upload' ? (
-                    <div className="mb-4">
-                      <Dragger {...uploadProps} fileList={uploadedFile ? [{ uid: '1', name: uploadedFile.name, status: 'done' }] : []}>
-                        <p className="ant-upload-drag-icon">
-                          <PaperClipOutlined style={{ fontSize: 48, color: '#F5A623' }} />
-                        </p>
-                        <p className="ant-upload-text">点击或拖拽文件到此处上传</p>
-                        <p className="ant-upload-hint">
-                          支持 PDF (.pdf) 或 Word (.docx/.doc)，文件大小不超过 10MB
-                        </p>
-                      </Dragger>
-                    </div>
-                  ) : null
-                ),
-              }))}
-              className="mb-4"
-            />
-
-            <Form
-              name="resume_input"
-              onFinish={handleUpload}
-              layout="vertical"
-              initialValues={{ resumeText: resume?.text || '' }}
+              activeKey={activeTab}
+              onChange={setActiveTab}
+              style={{ marginBottom: 24 }}
             >
-              <Form.Item
-                name="resumeText"
-                label="简历内容"
-                rules={[{ required: true, message: '请提供简历内容' }]}
+              <TabPane
+                tab={
+                  <Space>
+                    <UploadOutlined />
+                    文件上传
+                  </Space>
+                }
+                key="upload"
+              >
+                <Dragger {...uploadProps} style={{ background: '#FFFBF5' }}>
+                  <p className="ant-upload-drag-icon">
+                    <UploadOutlined style={{ color: '#F5A623', fontSize: 48 }} />
+                  </p>
+                  <p style={{ color: '#5C4A32', fontSize: 16 }}>
+                    点击或拖拽文件到此处上传
+                  </p>
+                  <p style={{ color: '#8B7355' }}>
+                    支持 PDF、Word 格式，文件不超过 5MB
+                  </p>
+                </Dragger>
+              </TabPane>
+
+              <TabPane
+                tab={
+                  <Space>
+                    <EditOutlined />
+                    直接粘贴
+                  </Space>
+                }
+                key="paste"
               >
                 <TextArea
-                  rows={12}
-                  placeholder="直接粘贴简历内容到这里..."
-                  showCount
-                  maxLength={10000}
-                  value={resumeText}
-                  onChange={(e) => setResumeText(e.target.value)}
-                  style={{ fontFamily: 'inherit', fontSize: '14px' }}
-                />
-              </Form.Item>
-
-              <Form.Item>
-                <Button
-                  type="primary"
-                  htmlType="submit"
-                  loading={loading}
-                  size="large"
-                  block
+                  rows={10}
+                  placeholder="请粘贴您的简历内容..."
+                  value={pastedContent}
+                  onChange={(e) => setPastedContent(e.target.value)}
                   style={{
-                    backgroundColor: '#F5A623',
-                    borderColor: '#F5A623',
-                    height: '48px',
-                    borderRadius: '12px',
+                    background: '#FFFBF5',
+                    borderColor: '#E8DFD0',
+                    resize: 'none',
                   }}
-                  icon={<CheckCircleOutlined />}
-                >
-                  {loading ? '正在解析...' : '保存简历'}
-                </Button>
-              </Form.Item>
-            </Form>
+                />
+              </TabPane>
+            </Tabs>
 
-            <Alert
-              title="💡 提示"
-              description="支持文件上传或直接粘贴简历文本，AI会根据JD针对性优化"
-              type="info"
-              showIcon
-            />
-          </Card>
-        </Col>
-
-        {/* 右侧：预览 */}
-        <Col xs={24} lg={12}>
-          <Card
-            title="📄 简历预览"
-            className="h-full"
-            styles={{ header: { backgroundColor: '#FFF8E7' } }}
-          >
-            {loading ? (
-              <div className="text-center py-16">
-                <Progress type="circle" percent={60} />
-                <div className="mt-4 text-gray-500">正在解析简历，请稍候...</div>
-              </div>
-            ) : resumeText || resume?.text ? (
-              <div className="whitespace-pre-wrap p-6 bg-amber-50 rounded-lg min-h-96">
-                {resumeText || resume?.text}
-              </div>
-            ) : (
-              <div className="text-center py-16">
-                <div className="text-5xl mb-4">📄</div>
-                <Text type="secondary">请先上传或粘贴简历内容</Text>
-              </div>
+            {resumeContent && (
+              <Alert
+                message={
+                  <Space>
+                    <CheckCircleOutlined style={{ color: '#52C41A' }} />
+                    <span>已上传：{resumeFilename}</span>
+                  </Space>
+                }
+                type="success"
+                showIcon={false}
+                style={{
+                  marginBottom: 16,
+                  background: '#F6FFED',
+                  border: '1px solid #B7EB8F',
+                }}
+              />
             )}
 
-            {jdAnalysis && (
+            <Button
+              type="primary"
+              size="large"
+              onClick={handleUpload}
+              loading={uploading}
+              disabled={fileList.length === 0 && !pastedContent.trim()}
+              block
+              style={{
+                background: '#F5A623',
+                borderColor: '#F5A623',
+                height: 48,
+                fontSize: 16,
+              }}
+            >
+              {uploading ? '上传中...' : '保存简历'}
+            </Button>
+
+            {resumeContent && jdAnalysis && (
+              <Button
+                type="primary"
+                size="large"
+                onClick={handleOptimize}
+                loading={optimizing}
+                block
+                style={{
+                  marginTop: 12,
+                  background: '#FF9500',
+                  borderColor: '#FF9500',
+                  height: 48,
+                  fontSize: 16,
+                }}
+              >
+                {optimizing ? 'AI优化中...' : '✨ AI优化简历'}
+              </Button>
+            )}
+
+            {!jdAnalysis && resumeContent && (
               <Alert
-                title="📋 已关联 JD"
-                description={`岗位：${jdAnalysis.analysis?.overview?.substring(0, 50) || '岗位'}...`}
-                type="success"
+                message="提示：先去进行JD分析，AI才能针对性优化您的简历"
+                type="info"
                 showIcon
-                className="mt-4"
+                style={{ marginTop: 12 }}
               />
             )}
           </Card>
         </Col>
-      </Row>
 
-      {(resumeText || resume?.text) && (
-        <div className="mt-6 flex justify-center">
-          <Space size="large">
-            {jdAnalysis && (
-              <Button
-                type="primary"
-                size="large"
+        {/* 右侧：预览区域 */}
+        <Col span={12} className="h-full">
+          <Card
+            title={
+              <Space>
+                <FileTextOutlined style={{ color: '#F5A623' }} />
+                <span style={{ color: '#5C4A32' }}>
+                  {optimizedResume ? '优化对比' : '简历预览'}
+                </span>
+              </Space>
+            }
+            className="h-full"
+            style={{
+              background: '#FFF8E7',
+              borderRadius: 16,
+              border: '1px solid #E8DFD0',
+            }}
+            bodyStyle={{ height: 'calc(100% - 57px)', overflow: 'auto' }}
+          >
+            {optimizedResume ? (
+              <Tabs defaultActiveKey="optimized">
+                <TabPane tab="优化后" key="optimized">
+                  <div
+                    style={{
+                      background: '#FFFBF5',
+                      padding: 20,
+                      borderRadius: 12,
+                      whiteSpace: 'pre-wrap',
+                      fontFamily: 'monospace',
+                      fontSize: 14,
+                      lineHeight: 1.8,
+                      color: '#5C4A32',
+                      border: '1px solid #E8DFD0',
+                    }}
+                  >
+                    {optimizedResume}
+                  </div>
+                </TabPane>
+                <TabPane tab="原始简历" key="original">
+                  <div
+                    style={{
+                      background: '#FFFBF5',
+                      padding: 20,
+                      borderRadius: 12,
+                      whiteSpace: 'pre-wrap',
+                      fontFamily: 'monospace',
+                      fontSize: 14,
+                      lineHeight: 1.8,
+                      color: '#5C4A32',
+                      border: '1px solid #E8DFD0',
+                    }}
+                  >
+                    {resumeContent}
+                  </div>
+                </TabPane>
+              </Tabs>
+            ) : resumeContent ? (
+              <div
                 style={{
-                  backgroundColor: '#F5A623',
-                  borderColor: '#F5A623',
-                }}
-                onClick={() => {
-                  message.info('继续功能开发中...');
+                  background: '#FFFBF5',
+                  padding: 20,
+                  borderRadius: 12,
+                  whiteSpace: 'pre-wrap',
+                  fontFamily: 'monospace',
+                  fontSize: 14,
+                  lineHeight: 1.8,
+                  color: '#5C4A32',
+                  border: '1px solid #E8DFD0',
                 }}
               >
-                开始模拟面试 →
-              </Button>
+                {resumeContent}
+              </div>
+            ) : (
+              <div
+                style={{
+                  textAlign: 'center',
+                  padding: '60px 20px',
+                  color: '#8B7355',
+                }}
+              >
+                <FileTextOutlined style={{ fontSize: 48, marginBottom: 16 }} />
+                <p>请先上传或粘贴简历</p>
+              </div>
             )}
-          </Space>
-        </div>
-      )}
+          </Card>
+        </Col>
+      </Row>
     </div>
   );
 }

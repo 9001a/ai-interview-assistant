@@ -196,17 +196,21 @@ export default function InterviewPage() {
 
   // 快速面试时重置 interviewStore
   // 注意：只有当没有 currentInterviewId 时才重置（避免继续面试时被重置）
+  const hasInterviewIdRef = useRef(!!currentInterviewId);
   useEffect(() => {
-    if (!isWorkspaceInterview && !currentInterviewId) {
+    const currentlyHasId = !!currentInterviewId;
+    // 避免在继续面试时（已经有 currentInterviewId）重置状态
+    if (!isWorkspaceInterview && !currentlyHasId && !hasInterviewIdRef.current) {
       // 快速面试：重置状态，确保不继承工作区面试
       resetInterview();
       clearMessages();
       setIsStarted(false);
     }
-  }, [isWorkspaceInterview, currentInterviewId]); // eslint-disable-line react-hooks/exhaustive-deps
-  // 依赖中包含 currentInterviewId，确保继续面试时不会触发重置
+    hasInterviewIdRef.current = currentlyHasId;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isWorkspaceInterview]);
+  // 只依赖 isWorkspaceInterview，使用 ref 跟踪 currentInterviewId 变化
   // clearMessages, setIsStarted, resetInterview 是稳定的 store 方法，不需要作为依赖
-  // 参考页面中其他类似注释的解释。 // eslint-disable-line react-hooks/exhaustive-deps
 
   // 同步消息到 workspaceStore（工作区面试时）
   useEffect(() => {

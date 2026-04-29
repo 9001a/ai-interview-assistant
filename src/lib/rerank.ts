@@ -7,7 +7,7 @@ import axios from 'axios';
 
 // Rerank 配置 - 从环境变量读取
 const RERANK_API_KEY = process.env.RERANK_API_KEY || process.env.COHERE_API_KEY;
-const RERANK_BASE_URL = process.env.RERANK_BASE_URL || 'https://api.cohere.com/v1';
+const RERANK_BASE_URL = process.env.RERANK_BASE_URL || process.env.RERANK_BINDING_HOST || 'https://api.cohere.com/v1';
 const RERANK_MODEL = process.env.RERANK_MODEL || 'rerank-multilingual-v2.0';
 
 // 是否使用模拟模式

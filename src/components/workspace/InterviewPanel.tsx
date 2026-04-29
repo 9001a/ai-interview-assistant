@@ -295,7 +295,8 @@ export default function InterviewPanel() {
                           turns: interview.turnCount,
                           score: interview.score,
                           messages: interview.messages || [],
-                          createdAt: interview.createdAt
+                          createdAt: interview.createdAt,
+                          _source: 'workspace' // 标记来源是工作区
                         } as any;
                         setCurrentHistoryRecord(tempRecord);
                         setCurrentPage('history_chat');

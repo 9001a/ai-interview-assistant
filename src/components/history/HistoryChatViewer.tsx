@@ -13,11 +13,20 @@ interface HistoryChatViewerProps {
 }
 
 export default function HistoryChatViewer({ record }: HistoryChatViewerProps) {
-  const { setCurrentPage } = usePageStore();
+  const { setCurrentPage, currentHistoryRecord } = usePageStore();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   // 兼容两种情况：标准历史记录和工作区临时记录
   const messages = record.content?.messages || (record as any).messages || [];
   const interviewerConfig = record.content?.interviewerConfig;
+
+  const handleBack = () => {
+    // 判断来源，如果是从工作区来的返回工作区，否则返回历史记录
+    if (currentHistoryRecord && (currentHistoryRecord as any)._source === 'workspace') {
+      setCurrentPage('workspace');
+    } else {
+      setCurrentPage('history');
+    }
+  };
 
   // 自动滚动到底部
   useEffect(() => {
@@ -35,7 +44,7 @@ export default function HistoryChatViewer({ record }: HistoryChatViewerProps) {
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <Button 
               icon={<ArrowLeftOutlined />} 
-              onClick={() => setCurrentPage('history')}
+              onClick={handleBack}
             >
               返回
             </Button>

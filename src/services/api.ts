@@ -102,6 +102,29 @@ export const resumeApi = {
 
 // 面试 API
 export const interviewApi = {
+  // 聊天（生成问题/评估回答）
+  chat: async (data: {
+    mode: 'question' | 'evaluate';
+    jdAnalysis?: any;
+    resume?: any;
+    interviewerConfig?: any;
+    messages?: any[];
+    userAnswer?: string;
+    lastQuestion?: string;
+  }): Promise<{ 
+    success: boolean; 
+    question?: string;
+    evaluation?: {
+      feedback: string;
+      score: number;
+      nextQuestion: string;
+      shouldContinue: boolean;
+    };
+    error?: string; 
+  }> => {
+    return api.post('/interview/chat', data);
+  },
+
   // 开始面试
   start: async (data: any) => {
     return api.post('/interview/start', data);

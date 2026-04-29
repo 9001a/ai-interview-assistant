@@ -10,7 +10,7 @@ export interface User {
 export interface InterviewerConfig {
   id?: string;
   name: string;
-  type: 'professional' | 'friendly' | 'strict' | 'casual' | 'custom';
+  type: 'professional' | 'friendly' | 'stress' | 'strict' | 'casual' | 'custom';
   style: string;
   tone: string;
   expression: string;
@@ -86,7 +86,9 @@ export interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
   content: string;
   turn?: number;
+  isTyping?: boolean;
   createdAt: string;
+  timestamp?: string;
 }
 
 // 面试报告类型

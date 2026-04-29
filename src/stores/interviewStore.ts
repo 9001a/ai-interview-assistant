@@ -1,12 +1,16 @@
 import { create } from 'zustand';
-import { InterviewSession, ChatMessage, InterviewerConfig, JDAnalysis, Resume } from '@/types';
+import { InterviewSession, ChatMessage, InterviewerConfig, JDAnalysis, Resume, KnowledgeDocument } from '@/types';
 
 interface InterviewState {
   currentSession: InterviewSession | null;
   messages: ChatMessage[];
   jdAnalysis: JDAnalysis | null;
   selectedResume: Resume | null;
+  selectedKnowledgeBase: KnowledgeDocument | null;
   interviewerConfig: InterviewerConfig;
+  isStarted: boolean;
+  isLoading: boolean;
+  turnCount: number;
   // Resume related
   resumeContent: string;
   resumeFilename: string;
@@ -17,7 +21,11 @@ interface InterviewState {
   clearMessages: () => void;
   setJDAnalysis: (jd: JDAnalysis | null) => void;
   setSelectedResume: (resume: Resume | null) => void;
+  setSelectedKnowledgeBase: (kb: KnowledgeDocument | null) => void;
   setInterviewerConfig: (config: Partial<InterviewerConfig>) => void;
+  setIsStarted: (started: boolean) => void;
+  setIsLoading: (loading: boolean) => void;
+  incrementTurnCount: () => void;
   // Resume actions
   setResumeContent: (content: string) => void;
   setResumeFilename: (filename: string) => void;
@@ -52,7 +60,11 @@ export const useInterviewStore = create<InterviewState>((set) => ({
   messages: [],
   jdAnalysis: null,
   selectedResume: null,
+  selectedKnowledgeBase: null,
   interviewerConfig: defaultInterviewerConfig,
+  isStarted: false,
+  isLoading: false,
+  turnCount: 0,
   resumeContent: '',
   resumeFilename: '',
   optimizedResume: '',
@@ -62,10 +74,14 @@ export const useInterviewStore = create<InterviewState>((set) => ({
   clearMessages: () => set({ messages: [] }),
   setJDAnalysis: (jd) => set({ jdAnalysis: jd }),
   setSelectedResume: (resume) => set({ selectedResume: resume }),
+  setSelectedKnowledgeBase: (kb) => set({ selectedKnowledgeBase: kb }),
   setInterviewerConfig: (config) =>
     set((state) => ({
       interviewerConfig: { ...state.interviewerConfig, ...config },
     })),
+  setIsStarted: (started) => set({ isStarted: started }),
+  setIsLoading: (loading) => set({ isLoading: loading }),
+  incrementTurnCount: () => set((state) => ({ turnCount: state.turnCount + 1 })),
   setResumeContent: (content) => set({ resumeContent: content }),
   setResumeFilename: (filename) => set({ resumeFilename: filename }),
   setOptimizedResume: (content) => set({ optimizedResume: content }),
@@ -75,7 +91,11 @@ export const useInterviewStore = create<InterviewState>((set) => ({
       messages: [],
       jdAnalysis: null,
       selectedResume: null,
+      selectedKnowledgeBase: null,
       interviewerConfig: defaultInterviewerConfig,
+      isStarted: false,
+      isLoading: false,
+      turnCount: 0,
       resumeContent: '',
       resumeFilename: '',
       optimizedResume: '',

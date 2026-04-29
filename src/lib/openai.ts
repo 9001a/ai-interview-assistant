@@ -154,4 +154,134 @@ ${resumeContent}
   }
 }
 
+export async function generateInterviewQuestion(
+  jdAnalysis: any,
+  resume: any,
+  interviewerConfig: any,
+  previousMessages: any[]
+): Promise<string> {
+  const jdSummary = jdAnalysis ? JSON.stringify(jdAnalysis) : '';
+  const resumeContent = resume?.content || resume?.summary || '';
+  
+  const context = `
+面试官类型：${interviewerConfig.name} (${interviewerConfig.type})
+风格：${interviewerConfig.style}
+语气：${interviewerConfig.tone}
+
+JD分析：
+${jdSummary}
+
+简历内容：
+${resumeContent}
+
+之前的对话：
+${previousMessages.map(m => `${m.role}: ${m.content}`).join('\n')}
+`;
+
+  const prompt = `${context}
+
+你是一位${interviewerConfig.name}。请根据JD要求和简历内容，用${interviewerConfig.questionStyle}的方式向候选人提出下一个面试问题。
+
+要求：
+1. 问题要贴合JD要求，考察候选人的实际能力
+2. ${interviewerConfig.questionStyle}，根据面试官类型调整
+3. 如果是第一个问题，可以从自我介绍或项目经历开始
+4. 如果是后续问题，可以追问上一个回答或展开新的领域
+5. 直接输出问题，不要加其他说明
+
+请输出问题：`;
+
+  try {
+    const response = await openai.chat.completions.create({
+      model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
+      messages: [
+        { role: 'system', content: '你是一位专业的面试官。' },
+        { role: 'user', content: prompt },
+      ],
+      temperature: 0.7,
+    });
+
+    return response.choices[0]?.message?.content?.trim() || '请先介绍一下你自己？';
+  } catch (error) {
+    console.error('生成面试问题失败:', error);
+    return '请先介绍一下你自己？';
+  }
+}
+
+export async function evaluateAnswer(
+  userAnswer: string,
+  lastQuestion: string,
+  jdAnalysis: any,
+  interviewerConfig: any
+): Promise<{
+  feedback: string;
+  score: number;
+  nextQuestion: string;
+  shouldContinue: boolean;
+}> {
+  const jdSummary = jdAnalysis ? JSON.stringify(jdAnalysis) : '';
+  
+  const prompt = `
+面试官类型：${interviewerConfig.name} (${interviewerConfig.type})
+风格：${interviewerConfig.style}
+语气：${interviewerConfig.tone}
+
+JD分析：
+${jdSummary}
+
+问题：${lastQuestion}
+
+候选人回答：
+${userAnswer}
+
+请评估候选人的回答，要求：
+1. 用${interviewerConfig.tone}的语气给出反馈
+2. ${interviewerConfig.features.giveFeedback ? '给出具体的评价和建议' : '简单确认'}
+3. ${interviewerConfig.features.correctErrors ? '指出错误并给出正确答案' : '不直接给出答案'}
+4. ${interviewerConfig.features.askFollowUps ? '根据回答提出追问' : '继续下一个话题'}
+5. 给出一个0-100的评分
+6. 决定是否继续面试（最多30轮）
+
+请按以下JSON格式输出：
+{
+  "feedback": "你的反馈...",
+  "score": 85,
+  "nextQuestion": "下一个问题...",
+  "shouldContinue": true
+}
+
+注意：
+- feedback要自然，符合${interviewerConfig.style}的风格
+- score要客观，基于回答质量
+- nextQuestion可以是追问，也可以是新领域的问题
+- shouldContinue在第30轮后设为false
+
+请输出JSON：`;
+
+  try {
+    const response = await openai.chat.completions.create({
+      model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
+      messages: [
+        { role: 'system', content: '你是一位专业的面试官，评估候选人并给出反馈。' },
+        { role: 'user', content: prompt },
+      ],
+      temperature: 0.7,
+      response_format: { type: 'json_object' },
+    });
+
+    const content = response.choices[0]?.message?.content;
+    if (!content) throw new Error('No response');
+
+    return JSON.parse(content);
+  } catch (error) {
+    console.error('评估回答失败:', error);
+    return {
+      feedback: '好的，我了解了。',
+      score: 60,
+      nextQuestion: '我们继续下一个问题...',
+      shouldContinue: true,
+    };
+  }
+}
+
 export default openai;

@@ -108,7 +108,7 @@ export default function JDPage() {
                 label="请粘贴岗位描述"
                 rules={[
                   { required: true, message: '请输入岗位描述' },
-                  { min: 20, message: '请输入有效的岗位描述（至少20个字）' }
+                  { type: 'string', min: 20, message: '请输入有效的岗位描述（至少20个字）' }
                 ]}
               >
                 <TextArea

@@ -74,10 +74,12 @@ export default function InterviewPage() {
       setLoadError('');
       
       // 如果 InterviewStore 中已经有消息记录，说明 InterviewPanel 已经设置好了，直接使用
-      if (messages.length > 0 && currentInterviewId) {
-        console.log('[InterviewPage] 使用 InterviewStore 中的现有消息:', {
+      // 或者如果正在继续面试（currentInterviewId存在），直接显示界面等待消息加载
+      if (currentInterviewId) {
+        console.log('[InterviewPage] 继续面试模式，直接显示界面:', {
           messageCount: messages.length,
-          currentInterviewId
+          currentInterviewId,
+          currentInterviewWorkspaceId
         });
         setIsLoadingWorkspace(false);
         setIsWorkspaceInterview(true);

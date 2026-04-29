@@ -60,7 +60,7 @@ export const warmYellowTheme: ThemeConfig = {
       colorPrimary: '#F5A623',
     },
     Menu: {
-      colorItemBg: '#FFF8E7',
+      itemBg: '#FFF8E7',
     },
   },
 };

@@ -155,7 +155,7 @@ export default function JDPage() {
           >
             {loading ? (
               <div className="text-center py-16">
-                <Spin size="large" tip="AI 正在分析中，请稍候..." />
+                <Spin size="large" description="AI 正在分析中，请稍候..." />
                 <div className="mt-4 text-gray-500">
                   正在从四个维度深入分析...
                 </div>

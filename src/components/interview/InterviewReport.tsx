@@ -44,27 +44,29 @@ export default function InterviewReport({ interview, onBack }: InterviewReportPr
       const jd = interview.jdId ? workspace?.jdList.find(j => j.id === interview.jdId) : null;
       const resume = interview.resumeId ? workspace?.resumes.find(r => r.id === interview.resumeId) : null;
 
-      // Mock messages - in a real implementation, we would store messages in the interview
-      const mockMessages: ChatMessage[] = [
-        {
-          id: '1',
-          sessionId: interview.id,
-          role: 'assistant',
-          content: '你好！欢迎参加今天的面试。首先，请简单介绍一下你自己。',
-          createdAt: interview.createdAt,
-        },
-        {
-          id: '2',
-          sessionId: interview.id,
-          role: 'user',
-          content: '你好！我是一名有多年经验的开发工程师，擅长前后端开发...',
-          createdAt: interview.createdAt,
-        },
-      ];
+      // Use real messages from interview
+      const messages = interview.messages && interview.messages.length > 0 
+        ? interview.messages 
+        : [
+            {
+              id: '1',
+              sessionId: interview.id,
+              role: 'assistant',
+              content: '你好！欢迎参加今天的面试。首先，请简单介绍一下你自己。',
+              createdAt: interview.createdAt,
+            },
+            {
+              id: '2',
+              sessionId: interview.id,
+              role: 'user',
+              content: '你好！我是一名有多年经验的开发工程师，擅长前后端开发...',
+              createdAt: interview.createdAt,
+            },
+          ];
 
       // Call API to generate report
       const result = await interviewApi.generateReport({
-        messages: mockMessages,
+        messages,
         jdAnalysis: jd ? {
           summary: jd.summary,
           tags: jd.tags,

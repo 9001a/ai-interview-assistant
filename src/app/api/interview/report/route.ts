@@ -1,15 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import OpenAI from 'openai';
 
 // 尝试初始化 OpenAI（如果有配置的话）
-let openai: OpenAI | null = null;
-try {
-  openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY || '',
-  });
-} catch (e) {
-  console.log('OpenAI not configured, using mock report generation');
-}
+// let openai: OpenAI | null = null;
+// try {
+//   openai = new OpenAI({
+//     apiKey: process.env.OPENAI_API_KEY || '',
+//   });
+// } catch (e) {
+//   console.log('OpenAI not configured, using mock report generation');
+// }
 
 export async function POST(request: NextRequest) {
   try {
@@ -25,13 +24,16 @@ export async function POST(request: NextRequest) {
 
     let report;
 
-    if (openai && process.env.OPENAI_API_KEY) {
-      // 使用真实AI生成报告
-      report = await generateAIReport(messages, jdAnalysis, resume, interviewerConfig);
-    } else {
-      // 如果没有配置API key，使用基于规则的生成
-      report = generateRuleBasedReport(messages);
-    }
+    // 暂时只用规则生成，避免环境问题
+    report = generateRuleBasedReport(messages);
+    
+    // if (openai && process.env.OPENAI_API_KEY) {
+    //   // 使用真实AI生成报告
+    //   report = await generateAIReport(messages, jdAnalysis, resume, interviewerConfig);
+    // } else {
+    //   // 如果没有配置API key，使用基于规则的生成
+    //   report = generateRuleBasedReport(messages);
+    // }
 
     return NextResponse.json({
       success: true,
@@ -46,68 +48,68 @@ export async function POST(request: NextRequest) {
   }
 }
 
-async function generateAIReport(
-  messages: any[], 
-  jdAnalysis: any, 
-  resume: any, 
-  interviewerConfig: any
-) {
-  if (!openai) throw new Error('OpenAI not initialized');
+// async function generateAIReport(
+//   messages: any[], 
+//   jdAnalysis: any, 
+//   resume: any, 
+//   interviewerConfig: any
+// ) {
+//   if (!openai) throw new Error('OpenAI not initialized');
 
-  const conversationText = messages
-    .filter((m: any) => m.role === 'user' || m.role === 'assistant')
-    .map((m: any) => `${m.role === 'user' ? '候选人' : '面试官'}: ${m.content}`)
-    .join('\n\n');
+//   const conversationText = messages
+//     .filter((m: any) => m.role === 'user' || m.role === 'assistant')
+//     .map((m: any) => `${m.role === 'user' ? '候选人' : '面试官'}: ${m.content}`)
+//     .join('\n\n');
 
-  const prompt = `你是一位专业的面试评估专家。请根据以下面试对话，生成一份详细的面试报告。
+//   const prompt = `你是一位专业的面试评估专家。请根据以下面试对话，生成一份详细的面试报告。
 
-## 面试对话
-${conversationText}
+// ## 面试对话
+// ${conversationText}
 
-## JD分析（如果有）
-${jdAnalysis ? JSON.stringify(jdAnalysis, null, 2) : '无'}
+// ## JD分析（如果有）
+// ${jdAnalysis ? JSON.stringify(jdAnalysis, null, 2) : '无'}
 
-## 简历信息（如果有）
-${resume ? JSON.stringify(resume, null, 2) : '无'}
+// ## 简历信息（如果有）
+// ${resume ? JSON.stringify(resume, null, 2) : '无'}
 
-请生成以下格式的JSON报告：
-{
-  "score": 0-100的综合评分,
-  "strengths": ["优势1", "优势2", "优势3"],
-  "weaknesses": ["待提升1", "待提升2"],
-  "suggestions": ["建议1", "建议2", "建议3"]
-}
+// 请生成以下格式的JSON报告：
+// {
+//   "score": 0-100的综合评分,
+//   "strengths": ["优势1", "优势2", "优势3"],
+//   "weaknesses": ["待提升1", "待提升2"],
+//   "suggestions": ["建议1", "建议2", "建议3"]
+// }
 
-要求：
-1. score 要根据对话质量真实评估
-2. strengths 至少3条
-3. weaknesses 1-3条
-4. suggestions 至少3条，要有针对性
-5. 用中文输出
-6. 只返回JSON，不要其他文字`;
+// 要求：
+// 1. score 要根据对话质量真实评估
+// 2. strengths 至少3条
+// 3. weaknesses 1-3条
+// 4. suggestions 至少3条，要有针对性
+// 5. 用中文输出
+// 6. 只返回JSON，不要其他文字`;
 
-  const response = await openai.chat.completions.create({
-    model: 'gpt-3.5-turbo',
-    messages: [
-      { role: 'system', content: '你是一位专业的面试评估专家。' },
-      { role: 'user', content: prompt },
-    ],
-    temperature: 0.7,
-  });
+//   const response = await openai.chat.completions.create({
+//     model: 'gpt-3.5-turbo',
+//     messages: [
+//       { role: 'system', content: '你是一位专业的面试评估专家。' },
+//       { role: 'user', content: prompt },
+//     ],
+//     temperature: 0.7,
+//   });
 
-  const content = response.choices[0]?.message?.content || '';
+//   const content = response.choices[0]?.message?.content || '';
   
-  try {
-    const jsonMatch = content.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      return JSON.parse(jsonMatch[0]);
-    }
-  } catch (e) {
-    console.log('Failed to parse AI response, using fallback');
-  }
+//   try {
+//     const jsonMatch = content.match(/\{[\s\S]*\}/);
+//     if (jsonMatch) {
+//       return JSON.parse(jsonMatch[0]);
+//     }
+//   } catch (e) {
+//     console.log('Failed to parse AI response, using fallback');
+//   }
 
-  return generateRuleBasedReport(messages);
-}
+//   return generateRuleBasedReport(messages);
+// }
 
 function generateRuleBasedReport(messages: any[]) {
   const userMessages = messages.filter((m: any) => m.role === 'user');

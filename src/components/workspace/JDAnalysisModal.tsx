@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Modal, Input, Button, Space, Typography, Tabs } from 'antd';
 import { FileTextOutlined, RobotOutlined, LoadingOutlined } from '@ant-design/icons';
 
@@ -10,7 +10,7 @@ const { Text } = Typography;
 interface JDAnalysisModalProps {
   open: boolean;
   onCancel: () => void;
-  onAnalyze: (jdText: string) => void;
+  onAnalyze: (jdText: string, jdTitle: string) => void;
   loading: boolean;
 }
 
@@ -29,12 +29,25 @@ const sampleJD = `【岗位名称】高级后端开发工程师
 
 export function JDAnalysisModal({ open, onCancel, onAnalyze, loading }: JDAnalysisModalProps) {
   const [jdText, setJdText] = useState('');
+  const [jdTitle, setJdTitle] = useState('');
   const [activeTab, setActiveTab] = useState('input');
 
   const handleAnalyze = () => {
     if (!jdText.trim()) return;
-    onAnalyze(jdText);
+    const title = jdTitle.trim() || jdText.split('\n')[0].slice(0, 30) || '未命名 JD';
+    onAnalyze(jdText, title);
   };
+
+  const resetState = () => {
+    setJdText('');
+    setJdTitle('');
+  };
+
+  React.useEffect(() => {
+    if (open) {
+      resetState();
+    }
+  }, [open]);
 
   const handleUseSample = () => {
     setJdText(sampleJD);
@@ -51,8 +64,21 @@ export function JDAnalysisModal({ open, onCancel, onAnalyze, loading }: JDAnalys
       children: (
         <>
           <div className="mb-4">
+            <Text strong className="block mb-2">JD 名称</Text>
+            <Input
+              value={jdTitle}
+              onChange={(e) => setJdTitle(e.target.value)}
+              placeholder="给这个 JD 起个名字，方便后续识别"
+              disabled={loading}
+            />
+            <Text type="secondary" className="text-xs mt-1">
+              不填的话会自动从 JD 第一行提取
+            </Text>
+          </div>
+
+          <div className="mb-4">
             <div className="flex justify-between items-center mb-2">
-              <Text>粘贴 JD 文本，AI 将自动分析岗位要求</Text>
+              <Text strong>JD 内容</Text>
               <Button type="link" onClick={handleUseSample}>
                 使用示例
               </Button>

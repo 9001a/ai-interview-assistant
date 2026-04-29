@@ -24,7 +24,7 @@ export function JDPanel() {
   const [analyzingJD, setAnalyzingJD] = useState<WorkspaceJD | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const handleAnalyze = async (jdText: string) => {
+  const handleAnalyze = async (jdText: string, jdTitle: string) => {
     setLoading(true);
     try {
       const result = await jdApi.analyze(jdText);
@@ -34,11 +34,8 @@ export function JDPanel() {
         return;
       }
 
-      // Generate title from first line or default
-      const title = jdText.split('\n')[0].slice(0, 30) || '未命名 JD';
-
       addJDToWorkspace(currentWorkspace!.id, {
-        title: title + (title.length >= 30 ? '...' : ''),
+        title: jdTitle,
         originalText: jdText,
         summary: result.data.summary,
         tags: result.data.tags,

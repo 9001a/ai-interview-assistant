@@ -112,7 +112,7 @@ export default function JDAndResumePage() {
                             </Space>
                           }
                           description={
-                            <Space direction="vertical" className="w-full mt-2">
+                            <Space orientation="vertical" className="w-full mt-2">
                               <Text type="secondary" className="text-xs">
                                 上传时间: {formatDateTime(jd.createdAt)}
                               </Text>
@@ -170,7 +170,7 @@ export default function JDAndResumePage() {
                             </Space>
                           }
                           description={
-                            <Space direction="vertical" className="w-full mt-2">
+                            <Space orientation="vertical" className="w-full mt-2">
                               <Text type="secondary" className="text-xs">
                                 上传时间: {formatDateTime(resume.createdAt)}
                               </Text>

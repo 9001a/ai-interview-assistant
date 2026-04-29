@@ -206,7 +206,7 @@ export default function InterviewReport({ interview, onBack }: InterviewReportPr
             </div>
             <div style={{ flex: 1 }}>
               <Title level={5} style={{ marginBottom: 16 }}>面试概览</Title>
-              <Space direction="vertical" style={{ width: '100%' }}>
+              <Space orientation="vertical" style={{ width: '100%' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <Text type="secondary">面试官</Text>
                   <Tag color="blue">{interview.interviewerConfig.name}</Tag>
@@ -233,7 +233,7 @@ export default function InterviewReport({ interview, onBack }: InterviewReportPr
               <CheckCircleOutlined style={{ marginRight: 8 }} />
               表现优势
             </Title>
-            <Space direction="vertical" style={{ width: '100%' }}>
+            <Space orientation="vertical" style={{ width: '100%' }}>
               {strengths.map((strength, index) => (
                 <div
                   key={index}
@@ -260,7 +260,7 @@ export default function InterviewReport({ interview, onBack }: InterviewReportPr
               <CloseCircleOutlined style={{ marginRight: 8 }} />
               待提升
             </Title>
-            <Space direction="vertical" style={{ width: '100%' }}>
+            <Space orientation="vertical" style={{ width: '100%' }}>
               {weaknesses.map((weakness, index) => (
                 <div
                   key={index}
@@ -287,7 +287,7 @@ export default function InterviewReport({ interview, onBack }: InterviewReportPr
               <BulbOutlined style={{ marginRight: 8 }} />
               改进建议
             </Title>
-            <Space direction="vertical" style={{ width: '100%' }}>
+            <Space orientation="vertical" style={{ width: '100%' }}>
               {suggestions.map((suggestion, index) => (
                 <div
                   key={index}

@@ -74,13 +74,21 @@ export default function JDPage() {
     setLoading(true);
     try {
       const res = await jdApi.analyze(values.jdText);
+      console.log('API Response:', res); // 调试用
       
-      if (res.analysis) {
-        setAnalysis(res.analysis);
-        setJDAnalysis(values.jdText, res.analysis);
+      // 处理两种可能的返回格式
+      const analysisData = res.analysis || res;
+      
+      if (analysisData && (analysisData.overview || analysisData.requirements)) {
+        setAnalysis(analysisData);
+        setJDAnalysis(values.jdText, analysisData);
         message.success('分析完成！');
+      } else {
+        console.error('Invalid response format:', res);
+        message.error('返回数据格式错误');
       }
     } catch (error: any) {
+      console.error('API Error:', error);
       message.error(error.response?.data?.error || '分析失败');
     } finally {
       setLoading(false);

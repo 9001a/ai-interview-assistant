@@ -85,18 +85,21 @@ export default function JDPage() {
         setTags(result.data.tags);
         
         // 保存到全局 JD Store
-        const jdAnalysis: JDAnalysis = {
-          id: Date.now().toString(),
+        const jdAnalysisData: JDAnalysis = {
+          id: `jd_${Date.now()}`,
           userId: user?.id || 'guest',
           originalText: values.jdText,
           summary: result.data.summary,
-          tags: result.data.tags,
+          tags: result.data.tags || [],
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         };
-        addJD(jdAnalysis);
         
-        message.success('分析完成！已保存到 JD 库');
+        // 立即保存到全局库
+        addJD(jdAnalysisData);
+        console.log('✅ JD 已保存到全局库:', jdAnalysisData.id);
+        
+        message.success('✅ 分析完成！已自动保存到"JD和简历"库');
       } else {
         message.error('返回数据格式错误');
       }

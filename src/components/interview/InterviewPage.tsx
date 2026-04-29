@@ -53,7 +53,6 @@ export default function InterviewPage() {
   const { currentWorkspace, workspaces, updateInterview } = useWorkspaceStore();
 
   // Local state
-  const [setupModalOpen, setSetupModalOpen] = useState(false);
   const [lastQuestion, setLastQuestion] = useState<string>('');
   const [isWorkspaceInterview, setIsWorkspaceInterview] = useState(false);
 
@@ -184,7 +183,6 @@ export default function InterviewPage() {
     setSelectedKnowledgeBase(config.knowledgeBase);
     setInterviewerConfig(config.interviewerConfig);
     clearMessages();
-    setSetupModalOpen(false);
     setIsStarted(true);
     
     // Generate first question
@@ -381,7 +379,6 @@ export default function InterviewPage() {
   // Reset
   const handleReset = () => {
     resetInterview();
-    setSetupModalOpen(true);
   };
 
   return (
@@ -403,33 +400,28 @@ export default function InterviewPage() {
       )}
       
       {!isStarted ? (
-        <Card style={{ borderRadius: 16 }}>
-          <div style={{ textAlign: 'center', padding: '60px 24px' }}>
-            <Title level={3} style={{ marginBottom: 16 }}>
-              <MessageOutlined style={{ marginRight: 8, color: '#F5A623' }} />
-              {isWorkspaceInterview ? '工作区面试' : 'AI 模拟面试'}
-            </Title>
-            <Text type="secondary" style={{ fontSize: 16, display: 'block', marginBottom: 32 }}>
-              {isWorkspaceInterview 
-                ? '正在加载面试...' 
-                : '选择 JD、简历和面试官，开始模拟面试'
-              }
-            </Text>
-            {!isWorkspaceInterview && (
-              <Space size="large">
-                <Button 
-                  type="primary" 
-                  size="large" 
-                  icon={<PlayCircleOutlined />} 
-                  onClick={() => setSetupModalOpen(true)}
-                  style={{ height: 48, minWidth: 180, fontSize: 16 }}
-                >
-                  开始面试
-                </Button>
-              </Space>
-            )}
-          </div>
-        </Card>
+        <>
+          {!isWorkspaceInterview ? (
+            <InterviewSetup
+              onStart={handleStart}
+              jdOptions={jdOptions}
+              resumeOptions={resumeOptions}
+              knowledgeBaseOptions={kbOptions}
+            />
+          ) : (
+            <Card style={{ borderRadius: 16 }}>
+              <div style={{ textAlign: 'center', padding: '60px 24px' }}>
+                <Title level={3} style={{ marginBottom: 16 }}>
+                  <MessageOutlined style={{ marginRight: 8, color: '#F5A623' }} />
+                  工作区面试
+                </Title>
+                <Text type="secondary" style={{ fontSize: 16, display: 'block', marginBottom: 32 }}>
+                  正在加载面试...
+                </Text>
+              </div>
+            </Card>
+          )}
+        </>
       ) : (
         <InterviewChat
           messages={messages}
@@ -440,16 +432,6 @@ export default function InterviewPage() {
           turnCount={turnCount}
         />
       )}
-
-      {/* Setup Modal */}
-      <InterviewSetup
-        open={setupModalOpen}
-        onCancel={() => setSetupModalOpen(false)}
-        onStart={handleStart}
-        jdOptions={jdOptions}
-        resumeOptions={resumeOptions}
-        knowledgeBaseOptions={kbOptions}
-      />
     </div>
   );
 }

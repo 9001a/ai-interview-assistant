@@ -1,6 +1,6 @@
 'use client';
 
-import { Modal, Form, Select, Radio, Button, Space, Divider, Typography, Alert } from 'antd';
+import { Card, Form, Select, Radio, Button, Space, Divider, Typography, Alert } from 'antd';
 import { useState } from 'react';
 import type { JDAnalysis, Resume, InterviewerConfig, KnowledgeDocument } from '@/types';
 
@@ -9,8 +9,6 @@ const { Option } = Select;
 const { Group: RadioGroup, Button: RadioButton } = Radio;
 
 interface InterviewSetupProps {
-  open: boolean;
-  onCancel: () => void;
   onStart: (config: {
     jd: JDAnalysis | null;
     resume: Resume | null;
@@ -45,8 +43,6 @@ const INTERVIEWER_TYPES: Array<{
 ];
 
 export default function InterviewSetup({
-  open,
-  onCancel,
   onStart,
   jdOptions,
   resumeOptions,
@@ -55,7 +51,7 @@ export default function InterviewSetup({
   const [form] = Form.useForm();
   const [interviewerType, setInterviewerType] = useState<InterviewerConfig['type']>('professional');
 
-  const handleOk = () => {
+  const handleSubmit = () => {
     form.validateFields().then((values) => {
       const selectedJD = jdOptions.find(o => o.value === values.jdId);
       const selectedResume = resumeOptions.find(o => o.value === values.resumeId);
@@ -97,18 +93,13 @@ export default function InterviewSetup({
   };
 
   return (
-    <Modal
+    <Card
       title={
         <Title level={4} style={{ margin: 0 }}>
           开始面试
         </Title>
       }
-      open={open}
-      onCancel={onCancel}
-      onOk={handleOk}
-      okText="开始面试"
-      cancelText="取消"
-      width={680}
+      style={{ borderRadius: 16 }}
     >
       <Form form={form} layout="vertical">
         <Alert
@@ -186,6 +177,16 @@ export default function InterviewSetup({
           </Text>
         </div>
       </Form>
-    </Modal>
+      <div style={{ marginTop: 24, textAlign: 'center' }}>
+        <Button 
+          type="primary" 
+          size="large" 
+          onClick={handleSubmit}
+          style={{ height: 48, minWidth: 180, fontSize: 16 }}
+        >
+          开始面试
+        </Button>
+      </div>
+    </Card>
   );
 }

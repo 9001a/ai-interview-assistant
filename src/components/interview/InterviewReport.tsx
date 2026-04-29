@@ -150,7 +150,7 @@ export default function InterviewReport({ interview, onBack }: InterviewReportPr
     <div style={{ padding: '24px', maxWidth: 900, margin: '0 auto' }}>
       {error && (
         <Alert
-          message="提示"
+          title="提示"
           description={error}
           type="warning"
           showIcon

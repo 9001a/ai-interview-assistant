@@ -103,7 +103,7 @@ export default function InterviewSetup({
     >
       <Form form={form} layout="vertical">
         <Alert
-          message="请选择面试配置"
+          title="请选择面试配置"
           description="选择 JD、简历、知识库和面试官类型"
           type="info"
           showIcon

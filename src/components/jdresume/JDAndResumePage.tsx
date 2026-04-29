@@ -261,6 +261,9 @@ export default function JDAndResumePage() {
                               <Text type="secondary" className="text-xs">
                                 文件类型: {resume.fileType.toUpperCase()}
                               </Text>
+                              {resume.optimizations && resume.optimizations.length > 0 && (
+                                <Tag color="green">已优化 {resume.optimizations.length} 次</Tag>
+                              )}
                             </Space>
                           }
                         />
@@ -351,22 +354,64 @@ export default function JDAndResumePage() {
         width={800}
       >
         {viewingResume && (
-          <Descriptions bordered column={1}>
-            <Descriptions.Item label="名称">{viewingResume.title}</Descriptions.Item>
-            <Descriptions.Item label="创建时间">
-              {formatDateTime(viewingResume.createdAt)}
-            </Descriptions.Item>
-            <Descriptions.Item label="文件类型">
-              {viewingResume.fileType.toUpperCase()}
-            </Descriptions.Item>
-            <Descriptions.Item label="内容摘要">
-              <div style={{ maxHeight: 400, overflow: 'auto', background: '#f5f5f5', padding: 8 }}>
-                <Text style={{ whiteSpace: 'pre-wrap', fontSize: 12 }}>
-                  {viewingResume.content}
-                </Text>
+          <>
+            <Descriptions bordered column={1}>
+              <Descriptions.Item label="名称">{viewingResume.title}</Descriptions.Item>
+              <Descriptions.Item label="创建时间">
+                {formatDateTime(viewingResume.createdAt)}
+              </Descriptions.Item>
+              <Descriptions.Item label="文件类型">
+                {viewingResume.fileType.toUpperCase()}
+              </Descriptions.Item>
+              <Descriptions.Item label="内容摘要">
+                <div style={{ maxHeight: 300, overflow: 'auto', background: '#f5f5f5', padding: 8 }}>
+                  <Text style={{ whiteSpace: 'pre-wrap', fontSize: 12 }}>
+                    {viewingResume.content}
+                  </Text>
+                </div>
+              </Descriptions.Item>
+            </Descriptions>
+            
+            {/* 优化记录 */}
+            {viewingResume.optimizations && viewingResume.optimizations.length > 0 && (
+              <div style={{ marginTop: 24 }}>
+                <Title level={5}>优化记录 ({viewingResume.optimizations.length})</Title>
+                {viewingResume.optimizations.map((opt, idx) => (
+                  <Card
+                    key={opt.id}
+                    size="small"
+                    title={`优化 #${viewingResume.optimizations!.length - idx} - ${formatDateTime(opt.createdAt)}`}
+                    style={{ marginBottom: 16 }}
+                  >
+                    <Descriptions bordered column={1} size="small">
+                      <Descriptions.Item label="匹配度评分">
+                        <Tag color={opt.score >= 80 ? 'green' : opt.score >= 60 ? 'orange' : 'red'}>
+                          {opt.score} 分
+                        </Tag>
+                      </Descriptions.Item>
+                      {opt.jdTitle && (
+                        <Descriptions.Item label="针对JD">{opt.jdTitle}</Descriptions.Item>
+                      )}
+                      <Descriptions.Item label="优化亮点">
+                        <ul style={{ margin: 0, paddingLeft: 16 }}>
+                          {opt.highlights.map((highlight, hIdx) => (
+                            <li key={hIdx}>{highlight}</li>
+                          ))}
+                        </ul>
+                      </Descriptions.Item>
+                      <Descriptions.Item label="优化后内容">
+                        <div style={{ maxHeight: 200, overflow: 'auto', background: '#f5f5f5', padding: 8 }}>
+                          <Text style={{ whiteSpace: 'pre-wrap', fontSize: 12 }}>
+                            {opt.content}
+                          </Text>
+                        </div>
+                      </Descriptions.Item>
+                    </Descriptions>
+                  </Card>
+                ))}
               </div>
-            </Descriptions.Item>
-          </Descriptions>
+            )}
+          </>
         )}
       </Modal>
 

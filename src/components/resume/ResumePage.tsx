@@ -21,6 +21,7 @@ import type { UploadFile } from 'antd/es/upload/interface';
 import { useInterviewStore } from '@/stores/interviewStore';
 import { useResumeStore } from '@/stores/resumeStore';
 import { useAuthStore } from '@/stores/authStore';
+import type { ResumeOptimization } from '@/types';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -32,6 +33,7 @@ export default function ResumePage() {
   const [pastedContent, setPastedContent] = useState('');
   const [uploading, setUploading] = useState(false);
   const [optimizing, setOptimizing] = useState(false);
+  const [currentResumeId, setCurrentResumeId] = useState<string | null>(null);
   
   const { 
     resumeContent, 
@@ -43,7 +45,7 @@ export default function ResumePage() {
     setResumeFilename,
   } = useInterviewStore();
   
-  const { addResume } = useResumeStore();
+  const { addResume, updateResume } = useResumeStore();
   const { user } = useAuthStore();
 
   const handleUpload = useCallback(async () => {
@@ -74,17 +76,20 @@ export default function ResumePage() {
         setResumeFilename(result.filename);
         
         // 同时保存到全局简历库
+        const resumeId = `resume_${Date.now()}`;
         const newResume = {
-          id: `resume_${Date.now()}`,
+          id: resumeId,
           userId: user?.id || 'anonymous',
           title: result.filename || '未命名简历',
           fileType: 'text' as const,
           content: result.content,
           summary: result.content.slice(0, 200) + '...',
+          optimizations: [],
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         };
         addResume(newResume);
+        setCurrentResumeId(resumeId);
         
         message.success('简历上传成功！');
       } else {
@@ -124,9 +129,31 @@ export default function ResumePage() {
 
       const result = await response.json();
       
-      if (result.success) {
-        setOptimizedResume(result.optimizedContent);
-        message.success('简历优化完成！');
+      if (result.success && result.data) {
+        setOptimizedResume(result.data.content);
+        
+        // 保存优化记录到简历
+        if (currentResumeId && result.data.highlights && result.data.score) {
+          const optimization: ResumeOptimization = {
+            id: `opt_${Date.now()}`,
+            content: result.data.content,
+            highlights: result.data.highlights,
+            score: result.data.score,
+            jdTitle: jdAnalysis?.title,
+            createdAt: new Date().toISOString(),
+          };
+          
+          const resume = useResumeStore.getState().resumes.find(r => r.id === currentResumeId);
+          if (resume) {
+            const optimizations = resume.optimizations || [];
+            updateResume(currentResumeId, {
+              optimizations: [optimization, ...optimizations],
+            });
+            console.log('✅ 优化记录已保存到简历:', currentResumeId);
+          }
+        }
+        
+        message.success('简历优化完成！已保存优化记录');
       } else {
         message.error(result.error || '优化失败');
       }
@@ -136,7 +163,7 @@ export default function ResumePage() {
     } finally {
       setOptimizing(false);
     }
-  }, [resumeContent, jdAnalysis, setOptimizedResume]);
+  }, [resumeContent, jdAnalysis, setOptimizedResume, currentResumeId, updateResume]);
 
   const uploadProps = {
     onRemove: () => {

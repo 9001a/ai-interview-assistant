@@ -49,6 +49,16 @@ export interface JDAnalysis {
   updatedAt: string;
 }
 
+// 简历优化记录
+export interface ResumeOptimization {
+  id: string;
+  content: string;
+  highlights: string[];
+  score: number;
+  jdTitle?: string;
+  createdAt: string;
+}
+
 // 简历类型
 export interface Resume {
   id?: string;
@@ -58,6 +68,7 @@ export interface Resume {
   fileType: 'pdf' | 'docx' | 'text';
   content: string;
   summary: string;
+  optimizations?: ResumeOptimization[];
   createdAt: string;
   updatedAt: string;
 }

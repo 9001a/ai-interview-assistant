@@ -1,0 +1,15 @@
+fastapi==0.115.0
+uvicorn[standard]==0.32.0
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+python-multipart==0.0.12
+python-dotenv==1.0.1
+openai==1.51.0
+cohere==5.11.7
+pdfplumber==0.11.4
+python-docx==1.1.2
+psycopg2-binary==2.9.10
+sqlalchemy==2.0.35
+pgvector==0.3.6
+boto3==1.35.46
+pydantic-settings==2.6.0

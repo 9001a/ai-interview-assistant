@@ -1,35 +1,63 @@
-import type { Metadata } from 'next';
-import Image from 'next/image';
+'use client';
 
-export const metadata: Metadata = {
-  title: '扣子编程 - AI 开发伙伴',
-  description: '扣子编程，你的 AI 开发伙伴已就位',
-};
+import { useEffect, useState } from 'react';
+import { ConfigProvider, theme, Spin } from 'antd';
+import { warmYellowTheme } from '@/theme/antd-theme';
+import { useAuthStore } from '@/stores/authStore';
+import Login from '@/components/auth/Login';
+import MainLayout from '@/components/layout/MainLayout';
 
 export default function Home() {
+  const { isLoggedIn, initialize } = useAuthStore();
+  const [isHydrated, setIsHydrated] = useState(false);
+
+  useEffect(() => {
+    console.log('🔄 页面加载，初始化...');
+    initialize();
+    setIsHydrated(true);
+    console.log('✅ 初始化完成，当前登录状态:', isLoggedIn);
+  }, []);
+
+  useEffect(() => {
+    console.log('📊 登录状态变化:', { isLoggedIn, isHydrated });
+  }, [isLoggedIn, isHydrated]);
+
+  if (!isHydrated) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh' 
+      }}>
+        <Spin size="large" />
+      </div>
+    );
+  }
+
+  console.log('🖥️ 渲染页面，登录状态:', isLoggedIn);
+
+  if (!isLoggedIn) {
+    return (
+      <ConfigProvider
+        theme={{
+          algorithm: theme.defaultAlgorithm,
+          token: warmYellowTheme,
+        }}
+      >
+        <Login />
+      </ConfigProvider>
+    );
+  }
+
   return (
-    <div className="flex h-full items-center justify-center bg-background text-foreground transition-colors duration-300 dark:bg-background dark:text-foreground overflow-hidden min-h-screen">
-      {/* 主容器 */}
-      <main className="flex w-full h-full max-w-3xl flex-col items-center justify-center px-16 py-32 sm:items-center">
-        <div className="flex flex-col items-center justify-between gap-4">
-           <Image
-            src="https://lf-coze-web-cdn.coze.cn/obj/eden-cn/lm-lgvj/ljhwZthlaukjlkulzlp/coze-coding/icon/coze-coding.gif"
-            alt="扣子编程 Logo"
-            width={156}
-            height={130}
-          />
-          <div>
-            <div className="flex flex-col items-center gap-2 text-center sm:items-center sm:text-center">
-              <h1 className="max-w-xl text-base font-semibold leading-tight tracking-tight text-foreground dark:text-foreground">
-                应用开发中
-              </h1>
-              <p className="max-w-2xl text-sm leading-8 text-muted-foreground dark:text-muted-foreground">
-                请稍后，页面即将呈现
-              </p>
-            </div>
-          </div>
-        </div>
-      </main>
-    </div>
+    <ConfigProvider
+      theme={{
+        algorithm: theme.defaultAlgorithm,
+        token: warmYellowTheme,
+      }}
+    >
+      <MainLayout />
+    </ConfigProvider>
   );
 }

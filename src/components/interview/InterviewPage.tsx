@@ -181,59 +181,24 @@ export default function InterviewPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages, isWorkspaceInterview, currentInterviewWorkspaceId, currentInterviewId]);
 
-  // Load options based on interview type
+  // Load options from global database (both quick and workspace interviews use the same data)
   useEffect(() => {
-    if (isWorkspaceInterview && currentWorkspace) {
-      // 工作区面试：只使用工作区内的数据
-      const jdOpts = currentWorkspace.jdList.map((jd) => ({
-        value: jd.id,
-        label: jd.title || '未命名JD',
-        jd: {
-          id: jd.id,
-          userId: 'workspace',
-          title: jd.title,
-          originalText: jd.originalText,
-          summary: jd.summary,
-          tags: jd.tags,
-          createdAt: jd.createdAt,
-          updatedAt: jd.createdAt,
-        } as unknown as JDAnalysis,
-        source: 'workspace' as const,
-      }));
-      setJdOptions(jdOpts);
+    // 所有面试都使用全局数据库的数据（数据互用）
+    const jdOpts = jdList.map((jd) => ({
+      value: jd.id!,
+      label: jd.summary?.overview?.slice(0, 50) || '未命名JD',
+      jd,
+      source: 'global' as const,
+    }));
+    setJdOptions(jdOpts);
 
-      const resumeOpts = currentWorkspace.resumes.map((resume) => ({
-        value: resume.id,
-        label: resume.title,
-        resume: {
-          id: resume.id,
-          userId: 'workspace',
-          title: resume.title,
-          originalText: resume.content,
-          createdAt: resume.createdAt,
-          updatedAt: resume.createdAt,
-        } as unknown as Resume,
-        source: 'workspace' as const,
-      }));
-      setResumeOptions(resumeOpts);
-    } else {
-      // 快速面试：使用全局数据库的数据
-      const jdOpts = jdList.map((jd) => ({
-        value: jd.id!,
-        label: jd.summary.overview.slice(0, 50) || '未命名JD',
-        jd,
-        source: 'global' as const,
-      }));
-      setJdOptions(jdOpts);
-
-      const resumeOpts = resumes.map((resume) => ({
-        value: resume.id!,
-        label: resume.title,
-        resume,
-        source: 'global' as const,
-      }));
-      setResumeOptions(resumeOpts);
-    }
+    const resumeOpts = resumes.map((resume) => ({
+      value: resume.id!,
+      label: resume.title,
+      resume,
+      source: 'global' as const,
+    }));
+    setResumeOptions(resumeOpts);
 
     // Mock KB options for now
     setKbOptions([{ value: '1', label: '后端面试题库', kb: { id: '1', userId: '1', title: '后端面试题库', sourceType: 'question_bank', createdAt: new Date().toISOString() } }]);

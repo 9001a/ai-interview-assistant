@@ -272,7 +272,7 @@ export default function ResumePage() {
 
             {!jdAnalysis && resumeContent && (
               <Alert
-                message="提示：先去进行JD分析，AI才能针对性优化您的简历"
+                title="提示：先去进行JD分析，AI才能针对性优化您的简历"
                 type="info"
                 showIcon
                 style={{ marginTop: 12 }}

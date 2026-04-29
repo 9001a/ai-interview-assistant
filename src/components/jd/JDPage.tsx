@@ -195,7 +195,7 @@ export default function JDPage() {
 
       {/* 使用提示 */}
       <Alert
-        message="💡 使用提示"
+        title="💡 使用提示"
         description="建议在「工作区」中进行 JD 分析，可以更好地管理多个 JD 并进行简历优化。"
         type="info"
         showIcon

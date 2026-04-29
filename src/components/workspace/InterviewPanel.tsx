@@ -4,7 +4,6 @@ import { useState } from 'react';
 import {
   Card,
   Button,
-  List,
   Tag,
   Space,
   Typography,
@@ -226,48 +225,18 @@ export default function InterviewPanel() {
             </Button>
           </Empty>
         ) : (
-          <List
-            dataSource={currentWorkspace.interviews}
-            renderItem={(interview) => (
-              <List.Item
-                actions={[
-                  interview.status === 'ongoing' ? (
-                    <Button
-                      key="continue"
-                      type="primary"
-                      icon={<PlayCircleOutlined />}
-                      size="small"
-                      onClick={() => router.push(`/interview/${interview.id}`)}
-                    >
-                      继续
-                    </Button>
-                  ) : (
-                    <Button
-                      key="view"
-                      icon={<EyeOutlined />}
-                      size="small"
-                      onClick={() => router.push(`/interview/${interview.id}/report`)}
-                    >
-                      查看报告
-                    </Button>
-                  ),
-                  <Popconfirm
-                    key="delete"
-                    title="删除面试记录"
-                    description="确定要删除这条面试记录吗？"
-                    onConfirm={() => removeInterview(currentWorkspace.id, interview.id)}
-                    okText="删除"
-                    cancelText="取消"
-                    okButtonProps={{ danger: true }}
-                  >
-                    <Button icon={<DeleteOutlined />} size="small" danger>
-                      删除
-                    </Button>
-                  </Popconfirm>,
-                ]}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {currentWorkspace.interviews.map((interview) => (
+              <div
+                key={interview.id}
+                style={{
+                  padding: 16,
+                  border: '1px solid #f0f0f0',
+                  borderRadius: 8,
+                }}
               >
-                <List.Item.Meta
-                  title={
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <div>
                     <Space>
                       <Text strong>{interview.title}</Text>
                       {getStatusTag(interview.status)}
@@ -275,9 +244,7 @@ export default function InterviewPanel() {
                         <Tag color="green">得分: {interview.score}</Tag>
                       )}
                     </Space>
-                  }
-                  description={
-                    <Space direction="vertical" size={0} style={{ marginTop: 4 }}>
+                    <Space direction="vertical" size={0} style={{ marginTop: 8 }}>
                       <Space size="small">
                         <FileTextOutlined style={{ color: '#8c8c8c' }} />
                         <Text type="secondary" style={{ fontSize: 12 }}>
@@ -311,11 +278,43 @@ export default function InterviewPanel() {
                         </Text>
                       </Space>
                     </Space>
-                  }
-                />
-              </List.Item>
-            )}
-          />
+                  </div>
+                  <Space>
+                    {interview.status === 'ongoing' ? (
+                      <Button
+                        type="primary"
+                        icon={<PlayCircleOutlined />}
+                        size="small"
+                        onClick={() => router.push(`/interview/${interview.id}`)}
+                      >
+                        继续
+                      </Button>
+                    ) : (
+                      <Button
+                        icon={<EyeOutlined />}
+                        size="small"
+                        onClick={() => router.push(`/interview/${interview.id}/report`)}
+                      >
+                        查看报告
+                      </Button>
+                    )}
+                    <Popconfirm
+                      title="删除面试记录"
+                      description="确定要删除这条面试记录吗？"
+                      onConfirm={() => removeInterview(currentWorkspace.id, interview.id)}
+                      okText="删除"
+                      cancelText="取消"
+                      okButtonProps={{ danger: true }}
+                    >
+                      <Button icon={<DeleteOutlined />} size="small" danger>
+                        删除
+                      </Button>
+                    </Popconfirm>
+                  </Space>
+                </div>
+              </div>
+            ))}
+          </div>
         )}
       </Card>
 

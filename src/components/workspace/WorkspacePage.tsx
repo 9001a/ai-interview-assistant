@@ -25,7 +25,6 @@ import { OptimizationPanel } from './OptimizationPanel';
 import InterviewPanel from './InterviewPanel';
 
 const { Title, Text } = Typography;
-const { TabPane } = Tabs;
 
 const workspaceTypeLabels: Record<WorkspaceType, { label: string; color: string }> = {
   backend: { label: '后端开发', color: 'blue' },
@@ -183,6 +182,45 @@ export default function WorkspacePage() {
   }
 
   // 工作区详情视图
+  const tabItems = [
+    {
+      key: 'jd',
+      label: (
+        <span>
+          <FileTextOutlined /> JD 管理 ({currentWorkspace.jdList.length})
+        </span>
+      ),
+      children: <JDPanel />,
+    },
+    {
+      key: 'resume',
+      label: (
+        <span>
+          <RobotOutlined /> 简历管理 ({currentWorkspace.resumes.length})
+        </span>
+      ),
+      children: <ResumePanel />,
+    },
+    {
+      key: 'optimization',
+      label: (
+        <span>
+          <SyncOutlined /> 优化记录 ({currentWorkspace.optimizations.length})
+        </span>
+      ),
+      children: <OptimizationPanel />,
+    },
+    {
+      key: 'interview',
+      label: (
+        <span>
+          <MessageOutlined /> 面试记录 ({currentWorkspace.interviews.length})
+        </span>
+      ),
+      children: <InterviewPanel />,
+    },
+  ];
+
   return (
     <div className="h-full flex flex-col">
       {/* 顶部导航 */}
@@ -231,32 +269,8 @@ export default function WorkspacePage() {
           defaultActiveKey="jd"
           className="workspace-tabs px-6"
           tabBarStyle={{ marginBottom: 0 }}
-        >
-          <TabPane
-            tab={<span><FileTextOutlined /> JD 管理 ({currentWorkspace.jdList.length})</span>}
-            key="jd"
-          >
-            <JDPanel />
-          </TabPane>
-          <TabPane
-            tab={<span><RobotOutlined /> 简历管理 ({currentWorkspace.resumes.length})</span>}
-            key="resume"
-          >
-            <ResumePanel />
-          </TabPane>
-          <TabPane
-            tab={<span><SyncOutlined /> 优化记录 ({currentWorkspace.optimizations.length})</span>}
-            key="optimization"
-          >
-            <OptimizationPanel />
-          </TabPane>
-          <TabPane
-            tab={<span><MessageOutlined /> 面试记录 ({currentWorkspace.interviews.length})</span>}
-            key="interview"
-          >
-            <InterviewPanel />
-          </TabPane>
-        </Tabs>
+          items={tabItems}
+        />
       </div>
     </div>
   );

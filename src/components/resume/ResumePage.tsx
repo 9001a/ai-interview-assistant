@@ -22,7 +22,6 @@ import { useInterviewStore } from '@/stores/interviewStore';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
-const { TabPane } = Tabs;
 const { Dragger } = Upload;
 
 export default function ResumePage() {
@@ -146,6 +145,53 @@ export default function ResumePage() {
     fileList,
   };
 
+  const tabItems = [
+    {
+      key: 'upload',
+      label: (
+        <Space>
+          <UploadOutlined />
+          文件上传
+        </Space>
+      ),
+      children: (
+        <Dragger {...uploadProps} style={{ background: '#FFFBF5' }}>
+          <p className="ant-upload-drag-icon">
+            <UploadOutlined style={{ color: '#F5A623', fontSize: 48 }} />
+          </p>
+          <p style={{ color: '#5C4A32', fontSize: 16 }}>
+            点击或拖拽文件到此处上传
+          </p>
+          <p style={{ color: '#8B7355' }}>
+            支持 PDF、Word 格式，文件不超过 5MB
+          </p>
+        </Dragger>
+      ),
+    },
+    {
+      key: 'paste',
+      label: (
+        <Space>
+          <EditOutlined />
+          直接粘贴
+        </Space>
+      ),
+      children: (
+        <TextArea
+          rows={10}
+          placeholder="请粘贴您的简历内容..."
+          value={pastedContent}
+          onChange={(e) => setPastedContent(e.target.value)}
+          style={{
+            background: '#FFFBF5',
+            borderColor: '#E8DFD0',
+            resize: 'none',
+          }}
+        />
+      ),
+    },
+  ];
+
   return (
     <div className="h-full">
       <Row gutter={24} className="h-full">
@@ -169,52 +215,9 @@ export default function ResumePage() {
             <Tabs
               activeKey={activeTab}
               onChange={setActiveTab}
+              items={tabItems}
               style={{ marginBottom: 24 }}
-            >
-              <TabPane
-                tab={
-                  <Space>
-                    <UploadOutlined />
-                    文件上传
-                  </Space>
-                }
-                key="upload"
-              >
-                <Dragger {...uploadProps} style={{ background: '#FFFBF5' }}>
-                  <p className="ant-upload-drag-icon">
-                    <UploadOutlined style={{ color: '#F5A623', fontSize: 48 }} />
-                  </p>
-                  <p style={{ color: '#5C4A32', fontSize: 16 }}>
-                    点击或拖拽文件到此处上传
-                  </p>
-                  <p style={{ color: '#8B7355' }}>
-                    支持 PDF、Word 格式，文件不超过 5MB
-                  </p>
-                </Dragger>
-              </TabPane>
-
-              <TabPane
-                tab={
-                  <Space>
-                    <EditOutlined />
-                    直接粘贴
-                  </Space>
-                }
-                key="paste"
-              >
-                <TextArea
-                  rows={10}
-                  placeholder="请粘贴您的简历内容..."
-                  value={pastedContent}
-                  onChange={(e) => setPastedContent(e.target.value)}
-                  style={{
-                    background: '#FFFBF5',
-                    borderColor: '#E8DFD0',
-                    resize: 'none',
-                  }}
-                />
-              </TabPane>
-            </Tabs>
+            />
 
             {resumeContent && (
               <Alert
@@ -301,68 +304,34 @@ export default function ResumePage() {
             styles={{ body: { height: 'calc(100% - 57px)', overflow: 'auto' } }}
           >
             {optimizedResume ? (
-              <Tabs defaultActiveKey="optimized">
-                <TabPane tab="优化后" key="optimized">
-                  <div
-                    style={{
-                      background: '#FFFBF5',
-                      padding: 20,
-                      borderRadius: 12,
-                      whiteSpace: 'pre-wrap',
-                      fontFamily: 'monospace',
-                      fontSize: 14,
-                      lineHeight: 1.8,
-                      color: '#5C4A32',
-                      border: '1px solid #E8DFD0',
-                    }}
-                  >
-                    {optimizedResume}
+              <div className="flex flex-col h-full">
+                <div className="flex gap-4 mb-4">
+                  <Tag color="blue">优化前</Tag>
+                  <Tag color="green">优化后</Tag>
+                </div>
+                <div className="grid grid-cols-2 gap-4 flex-1 overflow-auto">
+                  <div className="bg-white p-4 rounded-lg border border-gray-200">
+                    <pre className="whitespace-pre-wrap text-sm text-gray-700">
+                      {resumeContent}
+                    </pre>
                   </div>
-                </TabPane>
-                <TabPane tab="原始简历" key="original">
-                  <div
-                    style={{
-                      background: '#FFFBF5',
-                      padding: 20,
-                      borderRadius: 12,
-                      whiteSpace: 'pre-wrap',
-                      fontFamily: 'monospace',
-                      fontSize: 14,
-                      lineHeight: 1.8,
-                      color: '#5C4A32',
-                      border: '1px solid #E8DFD0',
-                    }}
-                  >
-                    {resumeContent}
+                  <div className="bg-white p-4 rounded-lg border border-green-200">
+                    <pre className="whitespace-pre-wrap text-sm text-gray-700">
+                      {optimizedResume}
+                    </pre>
                   </div>
-                </TabPane>
-              </Tabs>
+                </div>
+              </div>
             ) : resumeContent ? (
-              <div
-                style={{
-                  background: '#FFFBF5',
-                  padding: 20,
-                  borderRadius: 12,
-                  whiteSpace: 'pre-wrap',
-                  fontFamily: 'monospace',
-                  fontSize: 14,
-                  lineHeight: 1.8,
-                  color: '#5C4A32',
-                  border: '1px solid #E8DFD0',
-                }}
-              >
-                {resumeContent}
+              <div className="bg-white p-4 rounded-lg border border-gray-200">
+                <pre className="whitespace-pre-wrap text-sm text-gray-700">
+                  {resumeContent}
+                </pre>
               </div>
             ) : (
-              <div
-                style={{
-                  textAlign: 'center',
-                  padding: '60px 20px',
-                  color: '#8B7355',
-                }}
-              >
-                <FileTextOutlined style={{ fontSize: 48, marginBottom: 16 }} />
-                <p>请先上传或粘贴简历</p>
+              <div className="flex flex-col items-center justify-center h-full text-gray-400">
+                <FileTextOutlined style={{ fontSize: 64, marginBottom: 16 }} />
+                <Text>请先上传简历</Text>
               </div>
             )}
           </Card>

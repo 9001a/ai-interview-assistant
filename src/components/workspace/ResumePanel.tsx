@@ -16,7 +16,7 @@ import {
   ExclamationCircleOutlined,
 } from '@ant-design/icons';
 import { useWorkspaceStore } from '@/stores/workspaceStore';
-import { uploadResume } from '@/lib/resume-parser';
+
 import { resumeApi } from '@/services/api';
 import { WorkspaceResume } from '@/types';
 
@@ -44,19 +44,19 @@ export function ResumePanel() {
   const handleFileUpload = async (file: File) => {
     setUploading(true);
     try {
-      const result = await uploadResume(file);
+      const result = await resumeApi.parse(file);
 
       if (!result.success || !result.data) {
         message.error(result.error || '简历解析失败');
-        return;
+        return false;
       }
 
       setFileContent(result.data.content);
       setResumeTitle(file.name.replace(/\.[^/.]+$/, ''));
       setIsUploadModalOpen(false);
       message.success('简历解析成功，请完善信息');
-    } catch (error) {
-      message.error('上传失败，请重试');
+    } catch (error: any) {
+      message.error(error.response?.data?.error || '上传失败，请重试');
     } finally {
       setUploading(false);
     }

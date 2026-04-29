@@ -85,9 +85,13 @@ export const resumeApi = {
     });
   },
 
-  // 解析简历
-  parse: async (text: string) => {
-    return api.post('/resume/parse', { text });
+  // 解析简历文件（PDF/Word）
+  parse: async (file: File): Promise<{ success: boolean; data?: { content: string; summary: string; filename: string }; error?: string }> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post('/resume/parse', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
   },
 
   // 优化简历

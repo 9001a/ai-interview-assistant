@@ -19,6 +19,8 @@ import {
 import { UploadOutlined, FileTextOutlined, EditOutlined, CheckCircleOutlined } from '@ant-design/icons';
 import type { UploadFile } from 'antd/es/upload/interface';
 import { useInterviewStore } from '@/stores/interviewStore';
+import { useResumeStore } from '@/stores/resumeStore';
+import { useAuthStore } from '@/stores/authStore';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -40,6 +42,9 @@ export default function ResumePage() {
     resumeFilename,
     setResumeFilename,
   } = useInterviewStore();
+  
+  const { addResume } = useResumeStore();
+  const { user } = useAuthStore();
 
   const handleUpload = useCallback(async () => {
     if (fileList.length === 0 && !pastedContent.trim()) {
@@ -67,6 +72,20 @@ export default function ResumePage() {
       if (result.success) {
         setResumeContent(result.content);
         setResumeFilename(result.filename);
+        
+        // 同时保存到全局简历库
+        const newResume = {
+          id: `resume_${Date.now()}`,
+          userId: user?.id || 'anonymous',
+          title: result.filename || '未命名简历',
+          fileType: 'text' as const,
+          content: result.content,
+          summary: result.content.slice(0, 200) + '...',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+        addResume(newResume);
+        
         message.success('简历上传成功！');
       } else {
         message.error(result.error || '上传失败');
@@ -77,7 +96,7 @@ export default function ResumePage() {
     } finally {
       setUploading(false);
     }
-  }, [fileList, pastedContent, setResumeContent, setResumeFilename]);
+  }, [fileList, pastedContent, setResumeContent, setResumeFilename, addResume, user]);
 
   const handleOptimize = useCallback(async () => {
     if (!resumeContent) {

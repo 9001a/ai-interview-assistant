@@ -26,7 +26,8 @@ export async function POST(request: NextRequest) {
       const buffer = Buffer.from(bytes);
 
       // 解析简历
-      resumeContent = await parseResume(buffer, filename);
+      const { content } = await parseResume(buffer, file.type);
+      resumeContent = content;
 
       if (!resumeContent.trim()) {
         return NextResponse.json(

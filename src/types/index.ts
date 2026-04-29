@@ -126,6 +126,8 @@ export interface KnowledgeDocument {
   originalFilename?: string;
   fileUrl?: string;
   content?: string; // 文档内容
+  embedding?: number[]; // 向量嵌入
+  embeddingUpdatedAt?: string; // 向量更新时间
   createdAt: string;
 }
 

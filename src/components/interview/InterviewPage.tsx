@@ -163,6 +163,16 @@ export default function InterviewPage() {
     }
   }, [currentInterviewId, currentInterviewWorkspaceId]);
 
+  // 快速面试时重置 interviewStore
+  useEffect(() => {
+    if (!isWorkspaceInterview) {
+      // 快速面试：重置状态，确保不继承工作区面试
+      resetInterview();
+      clearMessages();
+      setIsStarted(false);
+    }
+  }, [isWorkspaceInterview]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // 同步消息到 workspaceStore（工作区面试时）
   useEffect(() => {
     if (isWorkspaceInterview && currentInterviewWorkspaceId && currentInterviewId && messages.length > 0) {

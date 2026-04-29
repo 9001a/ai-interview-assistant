@@ -125,6 +125,7 @@ export interface KnowledgeDocument {
   sourceType: 'interview_notes' | 'question_bank' | 'company_info';
   originalFilename?: string;
   fileUrl?: string;
+  content?: string; // 文档内容
   createdAt: string;
 }
 

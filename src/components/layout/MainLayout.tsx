@@ -30,7 +30,7 @@ const { Header, Sider, Content } = Layout;
 const { Title } = Typography;
 
 // PageType 与 pageStore 保持一致
-type PageType = 'workspace' | 'jd' | 'resume' | 'interview' | 'interview_report' | 'history' | 'history_chat' | 'knowledge' | 'jd_resume' | 'settings';
+type PageType = 'workspace' | 'jd' | 'resume' | 'interview' | 'workspace_interview' | 'interview_report' | 'history' | 'history_chat' | 'knowledge' | 'jd_resume' | 'settings';
 
 export default function MainLayout() {
   const { logout } = useAuthStore();
@@ -93,6 +93,7 @@ export default function MainLayout() {
       case 'resume':
         return <ResumePage />;
       case 'interview':
+      case 'workspace_interview':
         return <InterviewPage />;
       case 'interview_report':
         const { currentInterviewId, currentInterviewWorkspaceId, setCurrentPage } = usePageStore.getState();
@@ -135,7 +136,7 @@ export default function MainLayout() {
         </div>
         <Menu
           mode="inline"
-          selectedKeys={[currentPage]}
+          selectedKeys={[currentPage === 'workspace_interview' ? 'workspace' : currentPage]}
           items={menuItems}
           onClick={({ key }) => handlePageChange(key)}
           style={{ backgroundColor: '#FFF8E7' }}
@@ -188,6 +189,7 @@ function getPageTitle(page: PageType): string {
     jd: 'JD分析',
     resume: '简历优化',
     interview: 'AI面试',
+    workspace_interview: '工作区面试',
     interview_report: '面试报告',
     history: '历史记录',
     history_chat: '查看对话',

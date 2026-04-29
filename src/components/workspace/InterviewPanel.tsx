@@ -347,7 +347,7 @@ export default function InterviewPanel() {
                           }
                           
                           setCurrentInterview(interview.id, currentWorkspace.id);
-                          setCurrentPage('interview');
+                          setCurrentPage('workspace_interview');
                         }}
                       >
                         继续

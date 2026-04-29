@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { HistoryRecord } from '@/types';
 
-type PageType = 'workspace' | 'jd' | 'resume' | 'interview' | 'interview_report' | 'history' | 'history_chat' | 'knowledge' | 'jd_resume' | 'settings';
+type PageType = 'workspace' | 'jd' | 'resume' | 'interview' | 'workspace_interview' | 'interview_report' | 'history' | 'history_chat' | 'knowledge' | 'jd_resume' | 'settings';
 
 interface PageStore {
   currentPage: PageType;

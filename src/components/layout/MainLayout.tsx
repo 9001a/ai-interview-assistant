@@ -24,11 +24,13 @@ import HistoryPage from '@/components/history/HistoryPage';
 import HistoryChatViewer from '@/components/history/HistoryChatViewer';
 import KnowledgePage from '@/components/knowledge/KnowledgePage';
 import SettingsPage from '@/components/settings/SettingsPage';
+import JDAndResumePage from '@/components/jdresume/JDAndResumePage';
 
 const { Header, Sider, Content } = Layout;
 const { Title } = Typography;
 
-type PageType = 'workspace' | 'jd' | 'resume' | 'interview' | 'interview_report' | 'history' | 'history_chat' | 'knowledge' | 'settings';
+// PageType 与 pageStore 保持一致
+type PageType = 'workspace' | 'jd' | 'resume' | 'interview' | 'interview_report' | 'history' | 'history_chat' | 'knowledge' | 'jd_resume' | 'settings';
 
 export default function MainLayout() {
   const { logout } = useAuthStore();
@@ -67,6 +69,11 @@ export default function MainLayout() {
       icon: <BookOutlined />,
       label: '知识库',
     },
+    {
+      key: 'jd_resume',
+      icon: <FileTextOutlined />,
+      label: 'JD和简历',
+    },
   ];
 
   const handlePageChange = (key: string) => {
@@ -103,6 +110,8 @@ export default function MainLayout() {
         return currentHistoryRecord ? <HistoryChatViewer record={currentHistoryRecord} /> : <HistoryPage />;
       case 'knowledge':
         return <KnowledgePage />;
+      case 'jd_resume':
+        return <JDAndResumePage />;
       case 'settings':
         return <SettingsPage />;
       default:
@@ -183,6 +192,7 @@ function getPageTitle(page: PageType): string {
     history: '历史记录',
     history_chat: '查看对话',
     knowledge: '知识库',
+    jd_resume: 'JD和简历',
     settings: '设置',
   };
   return titles[page] || '工作区';

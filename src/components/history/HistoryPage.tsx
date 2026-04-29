@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Card, List, Typography, Tag, Button, Space, Input } from 'antd';
+import { Card, Typography, Tag, Button, Space, Input } from 'antd';
 import { HistoryOutlined, SearchOutlined, CalendarOutlined } from '@ant-design/icons';
 
 const { Title, Text } = Typography;
@@ -41,41 +41,46 @@ export default function HistoryPage() {
   };
 
   const getScoreColor = (score: number) => {
-    if (score >= 85) return '#52C41A';
-    if (score >= 70) return '#FAAD14';
+    if (score >= 90) return '#52C41A';
+    if (score >= 80) return '#F5A623';
     return '#FF6B6B';
   };
 
   return (
-    <div style={{ maxWidth: 900, margin: '0 auto' }}>
-      <Card style={{ borderRadius: 16 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-          <Title level={4} style={{ margin: 0 }}>
-            <HistoryOutlined style={{ marginRight: 8, color: '#F5A623' }} />
-            历史记录
-          </Title>
+    <div style={{ padding: '24px' }}>
+      <Card
+        styles={{
+          header: { backgroundColor: '#FFFBF5', borderBottom: '1px solid #E8DFD0' },
+          body: { backgroundColor: '#FFF8E7' },
+        }}
+        title={
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <HistoryOutlined style={{ color: '#F5A623', fontSize: 20 }} />
+            <Title level={4} style={{ margin: 0, color: '#5C4A32' }}>
+              面试历史
+            </Title>
+          </div>
+        }
+      >
+        <div style={{ marginBottom: 24 }}>
           <Input
+            prefix={<SearchOutlined style={{ color: '#8B7355' }} />}
             placeholder="搜索公司或岗位..."
-            prefix={<SearchOutlined />}
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
             style={{ width: 280 }}
           />
         </div>
 
-        <List
-          itemLayout="horizontal"
-          dataSource={mockHistory}
-          renderItem={(item) => (
-            <List.Item
-              actions={[
-                <Button type="link" size="small">查看对话</Button>,
-                <Button type="link" size="small">继续面试</Button>,
-                <Button type="link" size="small" danger>重新面试</Button>,
-              ]}
+        <Space direction="vertical" style={{ width: '100%' }} size="middle">
+          {mockHistory.map((item) => (
+            <Card
+              key={item.id}
+              size="small"
+              styles={{ body: { padding: 16 } }}
             >
-              <List.Item.Meta
-                avatar={
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div style={{ display: 'flex', gap: 16 }}>
                   <div
                     style={{
                       width: 48,
@@ -90,31 +95,36 @@ export default function HistoryPage() {
                   >
                     📌
                   </div>
-                }
-                title={
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <Text strong style={{ fontSize: 16 }}>{item.title}</Text>
-                    <Tag color={getStatusColor(item.status)}>
-                      {item.status === 'completed' ? '已完成' : '进行中'}
-                    </Tag>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+                      <Text strong style={{ fontSize: 16, color: '#5C4A32' }}>
+                        {item.title}
+                      </Text>
+                      <Tag color={getStatusColor(item.status)}>
+                        {item.status === 'completed' ? '已完成' : '进行中'}
+                      </Tag>
+                    </div>
+                    <Space>
+                      <Text type="secondary">
+                        <CalendarOutlined style={{ marginRight: 4 }} />
+                        {item.date}
+                      </Text>
+                      <Text type="secondary">面试轮数: {item.turns}</Text>
+                      <Text style={{ color: getScoreColor(item.score), fontWeight: 'bold' }}>
+                        评分: {item.score}
+                      </Text>
+                    </Space>
                   </div>
-                }
-                description={
-                  <Space>
-                    <Text type="secondary">
-                      <CalendarOutlined style={{ marginRight: 4 }} />
-                      {item.date}
-                    </Text>
-                    <Text type="secondary">面试轮数: {item.turn}</Text>
-                    <Text style={{ color: getScoreColor(item.score), fontWeight: 'bold' }}>
-                      评分: {item.score}
-                    </Text>
-                  </Space>
-                }
-              />
-            </List.Item>
-          )}
-        />
+                </div>
+                <Space>
+                  <Button type="link" size="small">查看对话</Button>
+                  <Button type="link" size="small">继续面试</Button>
+                  <Button type="link" size="small" danger>重新面试</Button>
+                </Space>
+              </div>
+            </Card>
+          ))}
+        </Space>
       </Card>
     </div>
   );

@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { Card, Button, Upload, Typography, List, Tag, Space, message } from 'antd';
-import { BookOutlined, UploadOutlined, FileTextOutlined } from '@ant-design/icons';
+import { Card, Button, Upload, Typography, Tag, Space, Row, Col, message } from 'antd';
+import { BookOutlined, UploadOutlined, FileTextOutlined, EyeOutlined, DeleteOutlined } from '@ant-design/icons';
 
 const { Title, Text } = Typography;
 const { Dragger } = Upload;
@@ -105,47 +105,58 @@ export default function KnowledgePage() {
           我的知识库
         </Title>
 
-        <List
-          itemLayout="horizontal"
-          dataSource={mockDocuments}
-          renderItem={(item) => {
+        <Row gutter={[16, 16]}>
+          {mockDocuments.map((item) => {
             const tagInfo = getTypeTag(item.type);
             return (
-              <List.Item
-                actions={[
-                  <Button type="link" size="small">查看</Button>,
-                  <Button type="link" size="small" danger>删除</Button>,
-                ]}
-              >
-                <List.Item.Meta
-                  avatar={
-                    <div
-                      style={{
-                        width: 48,
-                        height: 48,
-                        borderRadius: 12,
-                        backgroundColor: '#FFECD2',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: 20,
-                      }}
-                    >
-                      📄
-                    </div>
-                  }
-                  title={
-                    <Space>
-                      <Text strong style={{ fontSize: 15 }}>{item.title}</Text>
-                      <Tag color={tagInfo.color}>{tagInfo.text}</Tag>
-                    </Space>
-                  }
-                  description={<Text type="secondary">上传于 {item.date}</Text>}
-                />
-              </List.Item>
+              <Col xs={24} key={item.id}>
+                <Card
+                  size="small"
+                  style={{ borderRadius: 12, backgroundColor: '#FFF8E7' }}
+                  styles={{ body: { padding: 16 } }}
+                >
+                  <Row align="middle" gutter={[16, 16]}>
+                    <Col flex="48px">
+                      <div
+                        style={{
+                          width: 48,
+                          height: 48,
+                          borderRadius: 12,
+                          backgroundColor: '#FFECD2',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: 20,
+                        }}
+                      >
+                        📄
+                      </div>
+                    </Col>
+                    <Col flex="auto">
+                      <Space direction="vertical" size={4} style={{ width: '100%' }}>
+                        <Space>
+                          <Text strong style={{ fontSize: 15 }}>{item.title}</Text>
+                          <Tag color={tagInfo.color}>{tagInfo.text}</Tag>
+                        </Space>
+                        <Text type="secondary">上传于 {item.date}</Text>
+                      </Space>
+                    </Col>
+                    <Col>
+                      <Space>
+                        <Button type="link" icon={<EyeOutlined />} size="small">
+                          查看
+                        </Button>
+                        <Button type="link" icon={<DeleteOutlined />} size="small" danger>
+                          删除
+                        </Button>
+                      </Space>
+                    </Col>
+                  </Row>
+                </Card>
+              </Col>
             );
-          }}
-        />
+          })}
+        </Row>
       </Card>
     </div>
   );

@@ -128,6 +128,59 @@ export interface RetrievalResult {
   rerankScore?: number;
 }
 
+// 工作区简历记录
+export interface WorkspaceResume {
+  id: string;
+  title: string;
+  content: string;
+  summary: string;
+  fileUrl?: string;
+  fileType: 'pdf' | 'docx' | 'text';
+  createdAt: string;
+}
+
+// 工作区 JD 记录
+export interface WorkspaceJD {
+  id: string;
+  title: string;
+  originalText: string;
+  summary: {
+    overview: string;
+    hiddenRequirements: string;
+    dailyWork: string;
+    prospects: string;
+  };
+  tags: string[];
+  createdAt: string;
+}
+
+// 工作区优化记录
+export interface WorkspaceOptimization {
+  id: string;
+  resumeId: string;
+  jdIds: string[];
+  optimizedContent: string;
+  highlights: string[];
+  score: number;
+  createdAt: string;
+}
+
+// 工作区类型
+export type WorkspaceType = 'backend' | 'frontend' | 'algorithm' | 'product' | 'custom';
+
+export interface Workspace {
+  id: string;
+  userId: string;
+  name: string;
+  type: WorkspaceType;
+  jdList: WorkspaceJD[];
+  resumes: WorkspaceResume[];
+  optimizations: WorkspaceOptimization[];
+  status: 'analyzing' | 'optimizing' | 'interviewing' | 'completed' | 'idle';
+  createdAt: string;
+  updatedAt: string;
+}
+
 // API 响应类型
 export interface ApiResponse<T = any> {
   success: boolean;

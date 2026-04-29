@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { ConfigProvider, theme, Spin } from 'antd';
-import { warmYellowTheme } from '@/theme/antd-theme';
+import { warmYellowThemeToken } from '@/theme/antd-theme';
 import { useAuthStore } from '@/stores/authStore';
 import Login from '@/components/auth/Login';
 import MainLayout from '@/components/layout/MainLayout';
@@ -42,7 +42,7 @@ export default function Home() {
       <ConfigProvider
         theme={{
           algorithm: theme.defaultAlgorithm,
-          token: warmYellowTheme,
+          token: warmYellowThemeToken,
         }}
       >
         <Login />
@@ -54,7 +54,7 @@ export default function Home() {
     <ConfigProvider
       theme={{
         algorithm: theme.defaultAlgorithm,
-        token: warmYellowTheme,
+        token: warmYellowThemeToken,
       }}
     >
       <MainLayout />

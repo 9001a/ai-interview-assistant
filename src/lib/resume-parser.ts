@@ -97,3 +97,25 @@ export async function parseResume(
   
   return { content, summary };
 }
+
+/**
+ * 上传并解析简历文件
+ */
+export async function uploadResume(
+  file: File
+): Promise<{ success: boolean; data?: { content: string; summary: string }; error?: string }> {
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    const mimeType = file.type || 'application/octet-stream';
+
+    const result = await parseResume(buffer, mimeType);
+    return { success: true, data: result };
+  } catch (error) {
+    console.error('Upload resume error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : '文件解析失败',
+    };
+  }
+}

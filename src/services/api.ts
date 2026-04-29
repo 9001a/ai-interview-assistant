@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { JDAnalysis } from '@/types';
 
 // 创建 axios 实例
 const api = axios.create({

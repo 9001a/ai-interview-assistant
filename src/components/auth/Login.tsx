@@ -51,9 +51,10 @@ export default function Login() {
     setLoading(true);
     try {
       const res = await authApi.verifyCode(email, values.code);
-      
-      if (res.token && res.user) {
-        login(res.user, res.token);
+      const data = res.data || res;
+
+      if (data.token && data.user) {
+        login(data.user, data.token);
         message.success('登录成功！👋 欢迎回来');
       }
     } catch (error: any) {

@@ -3,16 +3,17 @@
 import { Layout, Menu, Typography, Button } from 'antd';
 import { useState } from 'react';
 import {
+  FolderOutlined,
   FileTextOutlined,
   FilePdfOutlined,
   MessageOutlined,
   HistoryOutlined,
-  PlusOutlined,
   BookOutlined,
   SettingOutlined,
 } from '@ant-design/icons';
 import { useAuthStore } from '@/stores/authStore';
 import { useInterviewStore } from '@/stores/interviewStore';
+import WorkspacePage from '@/components/workspace/WorkspacePage';
 import JDPage from '@/components/jd/JDPage';
 import ResumePage from '@/components/resume/ResumePage';
 import InterviewPage from '@/components/interview/InterviewPage';
@@ -23,15 +24,20 @@ import SettingsPage from '@/components/settings/SettingsPage';
 const { Header, Sider, Content } = Layout;
 const { Title } = Typography;
 
-type PageType = 'jd' | 'resume' | 'interview' | 'history' | 'knowledge' | 'settings';
+type PageType = 'workspace' | 'jd' | 'resume' | 'interview' | 'history' | 'knowledge' | 'settings';
 
 export default function MainLayout() {
   const { logout } = useAuthStore();
   const { resetInterview } = useInterviewStore();
-  const [currentPage, setCurrentPage] = useState<PageType>('jd');
+  const [currentPage, setCurrentPage] = useState<PageType>('workspace');
   const [collapsed, setCollapsed] = useState(false);
 
   const menuItems = [
+    {
+      key: 'workspace',
+      icon: <FolderOutlined />,
+      label: '工作区',
+    },
     {
       key: 'jd',
       icon: <FileTextOutlined />,
@@ -65,6 +71,8 @@ export default function MainLayout() {
 
   const renderContent = () => {
     switch (currentPage) {
+      case 'workspace':
+        return <WorkspacePage />;
       case 'jd':
         return <JDPage />;
       case 'resume':
@@ -78,7 +86,7 @@ export default function MainLayout() {
       case 'settings':
         return <SettingsPage />;
       default:
-        return <JDPage />;
+        return <WorkspacePage />;
     }
   };
 
@@ -133,7 +141,7 @@ export default function MainLayout() {
         </Header>
         <Content
           style={{
-            padding: 24,
+            padding: 0,
             backgroundColor: '#FFFBF5',
             minHeight: 'calc(100vh - 64px)',
           }}
@@ -147,6 +155,7 @@ export default function MainLayout() {
 
 function getPageTitle(page: PageType): string {
   const titles: Record<PageType, string> = {
+    workspace: '工作区',
     jd: 'JD分析',
     resume: '简历优化',
     interview: 'AI面试',
@@ -154,5 +163,5 @@ function getPageTitle(page: PageType): string {
     knowledge: '知识库',
     settings: '设置',
   };
-  return titles[page] || 'JD分析';
+  return titles[page] || '工作区';
 }

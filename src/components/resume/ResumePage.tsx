@@ -124,11 +124,11 @@ export default function ResumePage() {
     onRemove: () => {
       setFileList([]);
     },
-    beforeUpload: (file: File) => {
+    beforeUpload: (file: any) => {
       const isPDF = file.type === 'application/pdf';
       const isWord = file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
                      file.type === 'application/msword';
-      
+
       if (!isPDF && !isWord) {
         message.error('只支持 PDF 或 Word 文件！');
         return Upload.LIST_IGNORE;

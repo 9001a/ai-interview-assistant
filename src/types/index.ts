@@ -206,3 +206,18 @@ export interface ApiResponse<T = any> {
   error?: string;
   message?: string;
 }
+
+// 历史记录类型
+export type HistoryRecordType = 'jd_analysis' | 'resume_optimization' | 'interview';
+
+export interface HistoryRecord {
+  id: string;
+  type: HistoryRecordType;
+  title: string;
+  content: any;
+  source: 'workspace' | 'quick';
+  workspaceId?: string;
+  workspaceName?: string;
+  createdAt: string;
+  updatedAt: string;
+}

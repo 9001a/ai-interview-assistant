@@ -9,6 +9,7 @@ import {
   ReloadOutlined 
 } from '@ant-design/icons';
 import { useInterviewStore } from '@/stores/interviewStore';
+import { useHistoryStore } from '@/stores/historyStore';
 import InterviewSetup from './InterviewSetup';
 import InterviewChat from './InterviewChat';
 import type { JDAnalysis, Resume, KnowledgeDocument, ChatMessage } from '@/types';
@@ -225,8 +226,24 @@ export default function InterviewPage() {
   // End interview
   const handleEndInterview = () => {
     setIsStarted(false);
-    message.success('面试已结束');
-    // TODO: Save to history
+    
+    // 保存到历史记录 - 只保存 content，不需要完整的 WorkspaceInterview
+    useHistoryStore.getState().addRecord({
+      type: 'interview',
+      title: jdAnalysis ? (jdAnalysis.summary.overview || 'AI 面试') : 'AI 面试',
+      content: {
+        jdAnalysis,
+        resume: selectedResume,
+        messages: [...messages],
+        interviewerConfig,
+        knowledgeBaseId: selectedKnowledgeBase?.id,
+        turnCount,
+        score: 0, // 后续可以从最后一次评分提取
+      },
+      source: 'quick',
+    });
+    
+    message.success('面试已结束，已保存到历史记录');
   };
 
   // Reset

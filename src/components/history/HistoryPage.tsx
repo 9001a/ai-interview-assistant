@@ -5,6 +5,8 @@ import { Card, Typography, Tag, Button, Space, Input, Select, message } from 'an
 import { HistoryOutlined, SearchOutlined, CalendarOutlined } from '@ant-design/icons';
 import { useHistoryStore } from '@/stores/historyStore';
 import { usePageStore } from '@/stores/pageStore';
+import { useInterviewStore } from '@/stores/interviewStore';
+import { useWorkspaceStore } from '@/stores/workspaceStore';
 import type { HistoryRecordType, HistoryRecord } from '@/types';
 
 const { Title, Text } = Typography;
@@ -66,14 +68,61 @@ export default function HistoryPage() {
     }
   };
 
-  const handleContinueInterview = (record: HistoryRecord) => {
-    if (record.source === 'workspace' && record.workspaceId && record.interviewId) {
-      const { setCurrentInterview, setCurrentPage } = usePageStore.getState();
-      setCurrentInterview(record.interviewId, record.workspaceId);
-      setCurrentPage('interview');
-    } else {
-      message.info('继续面试功能仅支持工作区面试记录');
+  const handleContinueInterview = async (record: HistoryRecord) => {
+    if (record.type !== 'interview') {
+      message.info('只有面试记录可以继续');
+      return;
     }
+
+    const { setCurrentInterview, setCurrentPage } = usePageStore.getState();
+    const { setMessages, setIsStarted, setJDAnalysis, setSelectedResume, setInterviewerConfig, setCurrentSession } = useInterviewStore.getState();
+
+    // 加载历史对话
+    if (record.messages && record.messages.length > 0) {
+      setMessages(record.messages);
+      setIsStarted(true);
+    }
+
+    // 工作区面试
+    if (record.source === 'workspace' && record.workspaceId && record.interviewId) {
+      setCurrentInterview(record.interviewId, record.workspaceId);
+      
+      // 从工作区加载更多上下文
+      const { workspaces } = useWorkspaceStore.getState();
+      const workspace = workspaces.find(w => w.id === record.workspaceId);
+      const interview = workspace?.interviews.find(i => i.id === record.interviewId);
+      
+      if (interview) {
+        if (interview.jdId) {
+          const jd = workspace?.jdList.find((j: any) => j.id === interview.jdId);
+          if (jd) setJDAnalysis(jd as any);
+        }
+        if (interview.resumeId) {
+          const wsResume = workspace?.resumes.find((r: any) => r.id === interview.resumeId);
+          if (wsResume) {
+            // 转换 WorkspaceResume 为 Resume 类型
+            setSelectedResume({
+              id: wsResume.id,
+              title: wsResume.title,
+              content: wsResume.content,
+              fileType: wsResume.fileType,
+              fileUrl: wsResume.fileUrl,
+              userId: 'workspace_user',
+              createdAt: wsResume.createdAt,
+            } as any);
+          }
+        }
+        if (interview.interviewerConfig) {
+          setInterviewerConfig(interview.interviewerConfig);
+        }
+      }
+    } else {
+      // 快速面试
+      setCurrentInterview(null, null);
+    }
+
+    setCurrentPage('interview');
+    message.success('已加载历史对话，继续面试');
   };
 
   const handleViewDetails = (record: HistoryRecord) => {

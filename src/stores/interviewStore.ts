@@ -18,6 +18,7 @@ interface InterviewState {
   // Actions
   setCurrentSession: (session: InterviewSession | null) => void;
   addMessage: (message: ChatMessage) => void;
+  setMessages: (messages: ChatMessage[]) => void;
   clearMessages: () => void;
   setJDAnalysis: (jd: JDAnalysis | null) => void;
   setSelectedResume: (resume: Resume | null) => void;
@@ -71,6 +72,7 @@ export const useInterviewStore = create<InterviewState>((set) => ({
   setCurrentSession: (session) => set({ currentSession: session }),
   addMessage: (message) =>
     set((state) => ({ messages: [...state.messages, message] })),
+  setMessages: (messages) => set({ messages }),
   clearMessages: () => set({ messages: [] }),
   setJDAnalysis: (jd) => set({ jdAnalysis: jd }),
   setSelectedResume: (resume) => set({ selectedResume: resume }),

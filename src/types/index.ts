@@ -239,4 +239,6 @@ export interface HistoryRecord {
   status?: 'ongoing' | 'paused' | 'completed';
   turns?: number;
   score?: number;
+  // 面试消息记录
+  messages?: any[];
 }

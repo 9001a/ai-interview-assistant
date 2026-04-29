@@ -28,6 +28,7 @@ import {
   BookOutlined,
 } from '@ant-design/icons';
 import { useWorkspaceStore } from '@/stores/workspaceStore';
+import { useInterviewStore } from '@/stores/interviewStore';
 import { WorkspaceInterview, InterviewerConfig } from '@/types';
 import { usePageStore } from '@/stores/pageStore';
 
@@ -310,6 +311,41 @@ export default function InterviewPanel() {
                         icon={<PlayCircleOutlined />}
                         size="small"
                         onClick={() => {
+                          // 加载历史对话
+                          const { setMessages, setIsStarted, setJDAnalysis, setSelectedResume, setInterviewerConfig } = useInterviewStore.getState();
+                          
+                          if (interview.messages && interview.messages.length > 0) {
+                            setMessages(interview.messages);
+                            setIsStarted(true);
+                          }
+                          
+                          // 加载 JD
+                          if (interview.jdId) {
+                            const jd = currentWorkspace.jdList.find((j: any) => j.id === interview.jdId);
+                            if (jd) setJDAnalysis(jd as any);
+                          }
+                          
+                          // 加载简历
+                          if (interview.resumeId) {
+                            const wsResume = currentWorkspace.resumes.find((r: any) => r.id === interview.resumeId);
+                            if (wsResume) {
+                              setSelectedResume({
+                                id: wsResume.id,
+                                title: wsResume.title,
+                                content: wsResume.content,
+                                fileType: wsResume.fileType,
+                                fileUrl: wsResume.fileUrl,
+                                userId: currentWorkspace.userId,
+                                createdAt: wsResume.createdAt,
+                              } as any);
+                            }
+                          }
+                          
+                          // 加载面试官配置
+                          if (interview.interviewerConfig) {
+                            setInterviewerConfig(interview.interviewerConfig);
+                          }
+                          
                           setCurrentInterview(interview.id, currentWorkspace.id);
                           setCurrentPage('interview');
                         }}

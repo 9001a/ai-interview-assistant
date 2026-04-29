@@ -1,10 +1,10 @@
 'use client';
 
-import { Card, Tabs, List, Button, Empty, Tag, Typography, Space, Popconfirm } from 'antd';
-import { DeleteOutlined, FileTextOutlined } from '@ant-design/icons';
+import { Card, Tabs, List, Button, Empty, Tag, Typography, Space, Popconfirm, Badge } from 'antd';
+import { DeleteOutlined, FileTextOutlined, ReloadOutlined } from '@ant-design/icons';
 import { useJDStore } from '@/stores/jdStore';
 import { useResumeStore } from '@/stores/resumeStore';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 const { Title, Text } = Typography;
 
@@ -24,6 +24,13 @@ export default function JDAndResumePage() {
   const { jdList, deleteJD } = useJDStore();
   const { resumes, deleteResume } = useResumeStore();
   const [activeTab, setActiveTab] = useState('jd');
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    console.log('📋 JDAndResumePage 加载，当前 JD 数量:', jdList.length);
+    console.log('📋 当前简历数量:', resumes.length);
+  }, [jdList.length, resumes.length]);
 
   const handleDeleteJD = (id: string) => {
     deleteJD(id);
@@ -33,12 +40,33 @@ export default function JDAndResumePage() {
     deleteResume(id);
   };
 
+  const handleRefresh = () => {
+    window.location.reload();
+  };
+
+  // 避免 hydration 不匹配
+  if (!mounted) {
+    return (
+      <div className="p-6 max-w-6xl mx-auto">
+        <Title level={2}>JD 和简历管理</Title>
+        <Text type="secondary">加载中...</Text>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 max-w-6xl mx-auto">
-      <Title level={2}>JD 和简历管理</Title>
-      <Text type="secondary" className="mb-6 block">
-        统一管理您上传的所有 JD 和简历，可在面试时快速选择使用
-      </Text>
+      <div className="flex justify-between items-center mb-4">
+        <div>
+          <Title level={2}>JD 和简历管理</Title>
+          <Text type="secondary">
+            统一管理您上传的所有 JD 和简历，可在面试时快速选择使用
+          </Text>
+        </div>
+        <Button icon={<ReloadOutlined />} onClick={handleRefresh}>
+          刷新
+        </Button>
+      </div>
 
       <Tabs
         activeKey={activeTab}

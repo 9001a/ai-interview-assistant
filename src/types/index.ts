@@ -36,6 +36,7 @@ export interface InterviewerConfig {
 export interface JDAnalysis {
   id?: string;
   userId: string;
+  title?: string;
   originalText: string;
   summary: {
     overview: string;

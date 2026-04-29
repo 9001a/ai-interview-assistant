@@ -1,10 +1,11 @@
 'use client';
 
-import { Card, Tabs, List, Button, Empty, Tag, Typography, Space, Popconfirm, Badge } from 'antd';
-import { DeleteOutlined, FileTextOutlined, ReloadOutlined } from '@ant-design/icons';
+import { Card, Tabs, List, Button, Empty, Tag, Typography, Space, Popconfirm, Modal, Input, Descriptions } from 'antd';
+import { DeleteOutlined, FileTextOutlined, ReloadOutlined, EyeOutlined, EditOutlined } from '@ant-design/icons';
 import { useJDStore } from '@/stores/jdStore';
 import { useResumeStore } from '@/stores/resumeStore';
 import { useState, useEffect } from 'react';
+import { JDAnalysis, Resume } from '@/types';
 
 const { Title, Text } = Typography;
 
@@ -21,16 +22,21 @@ const formatDateTime = (dateStr: string) => {
 };
 
 export default function JDAndResumePage() {
-  const { jdList, deleteJD } = useJDStore();
-  const { resumes, deleteResume } = useResumeStore();
+  const { jdList, deleteJD, updateJD } = useJDStore();
+  const { resumes, deleteResume, updateResume } = useResumeStore();
   const [activeTab, setActiveTab] = useState('jd');
   const [mounted, setMounted] = useState(false);
 
+  // 查看/编辑状态
+  const [viewingJD, setViewingJD] = useState<JDAnalysis | null>(null);
+  const [viewingResume, setViewingResume] = useState<Resume | null>(null);
+  const [editingJD, setEditingJD] = useState<JDAnalysis | null>(null);
+  const [editingResume, setEditingResume] = useState<Resume | null>(null);
+  const [editName, setEditName] = useState('');
+
   useEffect(() => {
     setMounted(true);
-    console.log('📋 JDAndResumePage 加载，当前 JD 数量:', jdList.length);
-    console.log('📋 当前简历数量:', resumes.length);
-  }, [jdList.length, resumes.length]);
+  }, []);
 
   const handleDeleteJD = (id: string) => {
     deleteJD(id);
@@ -42,6 +48,44 @@ export default function JDAndResumePage() {
 
   const handleRefresh = () => {
     window.location.reload();
+  };
+
+  // 打开查看 JD 详情
+  const handleViewJD = (jd: JDAnalysis) => {
+    setViewingJD(jd);
+  };
+
+  // 打开编辑 JD 名称
+  const handleEditJD = (jd: JDAnalysis) => {
+    setEditingJD(jd);
+    setEditName(jd.title || `JD - ${formatDateTime(jd.createdAt)}`);
+  };
+
+  // 保存 JD 名称
+  const handleSaveJDName = () => {
+    if (editingJD && editingJD.id) {
+      updateJD(editingJD.id, { title: editName });
+      setEditingJD(null);
+    }
+  };
+
+  // 打开查看简历详情
+  const handleViewResume = (resume: Resume) => {
+    setViewingResume(resume);
+  };
+
+  // 打开编辑简历名称
+  const handleEditResume = (resume: Resume) => {
+    setEditingResume(resume);
+    setEditName(resume.title);
+  };
+
+  // 保存简历名称
+  const handleSaveResumeName = () => {
+    if (editingResume && editingResume.id) {
+      updateResume(editingResume.id, { title: editName });
+      setEditingResume(null);
+    }
   };
 
   // 避免 hydration 不匹配
@@ -89,6 +133,22 @@ export default function JDAndResumePage() {
                       <List.Item
                         key={jd.id}
                         actions={[
+                          <Button
+                            key="view"
+                            type="text"
+                            icon={<EyeOutlined />}
+                            onClick={() => handleViewJD(jd)}
+                          >
+                            查看
+                          </Button>,
+                          <Button
+                            key="edit"
+                            type="text"
+                            icon={<EditOutlined />}
+                            onClick={() => handleEditJD(jd)}
+                          >
+                            编辑
+                          </Button>,
                           <Popconfirm
                             key="delete"
                             title="确定要删除这个 JD 吗？"
@@ -108,7 +168,7 @@ export default function JDAndResumePage() {
                           title={
                             <Space>
                               <FileTextOutlined />
-                              <span>JD - {formatDateTime(jd.createdAt)}</span>
+                              <span>{jd.title || `JD - ${formatDateTime(jd.createdAt)}`}</span>
                             </Space>
                           }
                           description={
@@ -116,6 +176,14 @@ export default function JDAndResumePage() {
                               <Text type="secondary" className="text-xs">
                                 上传时间: {formatDateTime(jd.createdAt)}
                               </Text>
+                              {jd.tags && jd.tags.length > 0 && (
+                                <div className="flex flex-wrap gap-1">
+                                  {jd.tags.slice(0, 3).map((tag, idx) => (
+                                    <Tag key={idx} color="blue">{tag}</Tag>
+                                  ))}
+                                  {jd.tags.length > 3 && <Tag>+{jd.tags.length - 3}</Tag>}
+                                </div>
+                              )}
                               {jd.summary?.overview && (
                                 <Text ellipsis className="max-w-2xl">
                                   {jd.summary.overview.slice(0, 100)}...
@@ -148,6 +216,22 @@ export default function JDAndResumePage() {
                       <List.Item
                         key={resume.id}
                         actions={[
+                          <Button
+                            key="view"
+                            type="text"
+                            icon={<EyeOutlined />}
+                            onClick={() => handleViewResume(resume)}
+                          >
+                            查看
+                          </Button>,
+                          <Button
+                            key="edit"
+                            type="text"
+                            icon={<EditOutlined />}
+                            onClick={() => handleEditResume(resume)}
+                          >
+                            编辑
+                          </Button>,
                           <Popconfirm
                             key="delete"
                             title="确定要删除这份简历吗？"
@@ -174,6 +258,9 @@ export default function JDAndResumePage() {
                               <Text type="secondary" className="text-xs">
                                 上传时间: {formatDateTime(resume.createdAt)}
                               </Text>
+                              <Text type="secondary" className="text-xs">
+                                文件类型: {resume.fileType.toUpperCase()}
+                              </Text>
                             </Space>
                           }
                         />
@@ -186,6 +273,116 @@ export default function JDAndResumePage() {
           },
         ]}
       />
+
+      {/* 查看 JD 详情 Modal */}
+      <Modal
+        title="JD 详情"
+        open={!!viewingJD}
+        onCancel={() => setViewingJD(null)}
+        footer={[
+          <Button key="close" onClick={() => setViewingJD(null)}>
+            关闭
+          </Button>,
+        ]}
+        width={800}
+      >
+        {viewingJD && (
+          <Descriptions bordered column={1}>
+            <Descriptions.Item label="名称">
+              {viewingJD.title || `JD - ${formatDateTime(viewingJD.createdAt)}`}
+            </Descriptions.Item>
+            <Descriptions.Item label="创建时间">
+              {formatDateTime(viewingJD.createdAt)}
+            </Descriptions.Item>
+            <Descriptions.Item label="技能标签">
+              <Space wrap>
+                {viewingJD.tags?.map((tag, idx) => (
+                  <Tag key={idx} color="blue">{tag}</Tag>
+                ))}
+              </Space>
+            </Descriptions.Item>
+            <Descriptions.Item label="岗位概述">
+              {viewingJD.summary?.overview}
+            </Descriptions.Item>
+            <Descriptions.Item label="隐含要求">
+              {viewingJD.summary?.hiddenRequirements}
+            </Descriptions.Item>
+            <Descriptions.Item label="日常工作">
+              {viewingJD.summary?.dailyWork}
+            </Descriptions.Item>
+            <Descriptions.Item label="发展前景">
+              {viewingJD.summary?.prospects}
+            </Descriptions.Item>
+            <Descriptions.Item label="原始文本">
+              <div style={{ maxHeight: 200, overflow: 'auto', background: '#f5f5f5', padding: 8 }}>
+                <Text style={{ whiteSpace: 'pre-wrap', fontSize: 12 }}>
+                  {viewingJD.originalText}
+                </Text>
+              </div>
+            </Descriptions.Item>
+          </Descriptions>
+        )}
+      </Modal>
+
+      {/* 编辑 JD 名称 Modal */}
+      <Modal
+        title="编辑 JD 名称"
+        open={!!editingJD}
+        onCancel={() => setEditingJD(null)}
+        onOk={handleSaveJDName}
+      >
+        <Input
+          value={editName}
+          onChange={(e) => setEditName(e.target.value)}
+          placeholder="请输入 JD 名称"
+        />
+      </Modal>
+
+      {/* 查看简历详情 Modal */}
+      <Modal
+        title="简历详情"
+        open={!!viewingResume}
+        onCancel={() => setViewingResume(null)}
+        footer={[
+          <Button key="close" onClick={() => setViewingResume(null)}>
+            关闭
+          </Button>,
+        ]}
+        width={800}
+      >
+        {viewingResume && (
+          <Descriptions bordered column={1}>
+            <Descriptions.Item label="名称">{viewingResume.title}</Descriptions.Item>
+            <Descriptions.Item label="创建时间">
+              {formatDateTime(viewingResume.createdAt)}
+            </Descriptions.Item>
+            <Descriptions.Item label="文件类型">
+              {viewingResume.fileType.toUpperCase()}
+            </Descriptions.Item>
+            <Descriptions.Item label="内容摘要">
+              <div style={{ maxHeight: 400, overflow: 'auto', background: '#f5f5f5', padding: 8 }}>
+                <Text style={{ whiteSpace: 'pre-wrap', fontSize: 12 }}>
+                  {viewingResume.content}
+                </Text>
+              </div>
+            </Descriptions.Item>
+          </Descriptions>
+        )}
+      </Modal>
+
+      {/* 编辑简历名称 Modal */}
+      <Modal
+        title="编辑简历名称"
+        open={!!editingResume}
+        onCancel={() => setEditingResume(null)}
+        onOk={handleSaveResumeName}
+      >
+        <Input
+          value={editName}
+          onChange={(e) => setEditName(e.target.value)}
+          placeholder="请输入简历名称"
+        />
+      </Modal>
     </div>
   );
 }

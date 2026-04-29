@@ -164,7 +164,7 @@ export default function ResumePage() {
               borderRadius: 16,
               border: '1px solid #E8DFD0',
             }}
-            bodyStyle={{ height: 'calc(100% - 57px)', overflow: 'auto' }}
+            styles={{ body: { height: 'calc(100% - 57px)', overflow: 'auto' } }}
           >
             <Tabs
               activeKey={activeTab}
@@ -298,7 +298,7 @@ export default function ResumePage() {
               borderRadius: 16,
               border: '1px solid #E8DFD0',
             }}
-            bodyStyle={{ height: 'calc(100% - 57px)', overflow: 'auto' }}
+            styles={{ body: { height: 'calc(100% - 57px)', overflow: 'auto' } }}
           >
             {optimizedResume ? (
               <Tabs defaultActiveKey="optimized">

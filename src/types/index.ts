@@ -220,4 +220,8 @@ export interface HistoryRecord {
   workspaceName?: string;
   createdAt: string;
   updatedAt: string;
+  // 面试特有字段
+  status?: 'ongoing' | 'paused' | 'completed';
+  turns?: number;
+  score?: number;
 }

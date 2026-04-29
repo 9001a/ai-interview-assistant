@@ -149,6 +149,25 @@ export const interviewApi = {
   getDetail: async (sessionId: string) => {
     return api.get(`/interview/${sessionId}`);
   },
+
+  // 生成面试报告
+  generateReport: async (data: {
+    messages: any[];
+    jdAnalysis?: any;
+    resume?: any;
+    interviewerConfig?: any;
+  }): Promise<{
+    success: boolean;
+    data?: {
+      score: number;
+      strengths: string[];
+      weaknesses: string[];
+      suggestions: string[];
+    };
+    error?: string;
+  }> => {
+    return api.post('/interview/report', data);
+  },
 };
 
 // 知识库 API

@@ -108,9 +108,26 @@ export default function JDPage() {
                 label="请粘贴岗位描述"
                 rules={[
                   { required: true, message: '请输入岗位描述' },
-                  { type: 'string', min: 20, message: '请输入有效的岗位描述（至少20个字）' }
+                  () => ({
+                    validator(_, value) {
+                      if (!value || value.trim().length < 20) {
+                        return Promise.reject(new Error('请输入有效的岗位描述（至少20个字）'));
+                      }
+                      return Promise.resolve();
+                    },
+                  }),
                 ]}
               >
+                {({ getValueFromEvent }) => (
+                  <TextArea
+                    rows={16}
+                    placeholder="从招聘网站复制粘贴岗位描述到这里..."
+                    showCount
+                    maxLength={10000}
+                    style={{ fontFamily: 'inherit', fontSize: '14px' }}
+                    onChange={(e) => getValueFromEvent?.(e.target.value)}
+                  />
+                )}
                 <TextArea
                   rows={16}
                   placeholder="从招聘网站复制粘贴岗位描述到这里..."

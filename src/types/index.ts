@@ -117,7 +117,28 @@ export interface InterviewReport {
   suggestions: string[];
 }
 
-// 知识库文档类型
+// 三级片段（最小粒度，实际存储向量）
+export interface KnowledgeSegment {
+  id: string;
+  content: string; // 句子/短片段内容
+  embedding: number[]; // 实际存储向量的最小单元
+  parentChunkId: string; // 父级段落ID
+  startIndex: number; // 在段落中的起始位置
+  endIndex: number; // 在段落中的结束位置
+}
+
+// 二级段落块（语义完整的块）
+export interface KnowledgeChunk {
+  id: string;
+  content: string; // 段落完整内容
+  summary: string; // 段落摘要
+  startIndex: number; // 在文档中的起始位置
+  endIndex: number; // 在文档中的结束位置
+  embedding?: number[]; // 段落级向量（可选，用于粗排）
+  segments: KnowledgeSegment[]; // 三级片段列表
+}
+
+// 知识库文档类型（三级父子块结构）
 export interface KnowledgeDocument {
   id?: string;
   userId: string;
@@ -125,9 +146,11 @@ export interface KnowledgeDocument {
   sourceType: 'interview_notes' | 'question_bank' | 'company_info';
   originalFilename?: string;
   fileUrl?: string;
-  content?: string; // 文档内容
-  embedding?: number[]; // 向量嵌入
+  content: string; // 完整文档内容
+  summary: string; // 文档摘要
+  embedding?: number[]; // 文档级向量（可选）
   embeddingUpdatedAt?: string; // 向量更新时间
+  chunks: KnowledgeChunk[]; // 二级段落块列表
   createdAt: string;
 }
 

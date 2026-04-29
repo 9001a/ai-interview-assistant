@@ -251,7 +251,7 @@ export default function InterviewPage() {
     setResumeOptions(resumeOpts);
 
     // Mock KB options for now
-    setKbOptions([{ value: '1', label: '后端面试题库', kb: { id: '1', userId: '1', title: '后端面试题库', sourceType: 'question_bank', createdAt: new Date().toISOString() } }]);
+    setKbOptions([{ value: '1', label: '后端面试题库', kb: { id: '1', userId: '1', title: '后端面试题库', sourceType: 'question_bank', content: '', summary: '', chunks: [], createdAt: new Date().toISOString() } }]);
   }, [jdList, resumes, isWorkspaceInterview, currentWorkspace]);
 
   // Start interview

@@ -129,3 +129,10 @@ function generateMockVector(dimension: number): number[] {
 export function isEmbeddingAvailable(): boolean {
   return !!EMBEDDING_API_KEY;
 }
+
+/**
+ * 生成文本向量（getEmbedding 的别名）
+ */
+export function generateEmbedding(text: string): Promise<number[]> {
+  return getEmbedding(text);
+}

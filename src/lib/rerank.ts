@@ -98,3 +98,14 @@ export async function rerank(
 export function isRerankAvailable(): boolean {
   return !!RERANK_API_KEY;
 }
+
+/**
+ * 对文档进行重排序（rerank 的别名）
+ */
+export async function rerankDocuments(
+  query: string,
+  documents: RerankDocument[],
+  topK: number = 5
+): Promise<RerankResult[]> {
+  return rerank(query, documents, topK);
+}

@@ -2,32 +2,41 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { KnowledgeDocument } from '@/types';
+import type { KnowledgeDocument, KnowledgeChunk, KnowledgeSegment } from '@/types';
 import { cosineSimilarity, getEmbedding } from '@/lib/embedding';
+import { chunkDocument, generateDocumentSummary } from '@/lib/chunking';
 
 interface KnowledgeState {
   documents: KnowledgeDocument[];
-  addDocument: (doc: Omit<KnowledgeDocument, 'id' | 'createdAt'>) => Promise<string>;
+  
+  // CRUD 操作
+  addDocument: (doc: Omit<KnowledgeDocument, 'id' | 'createdAt' | 'chunks' | 'summary'>) => Promise<string>;
   deleteDocument: (id: string) => void;
   updateDocument: (id: string, updates: Partial<KnowledgeDocument>) => void;
   getDocumentById: (id: string) => KnowledgeDocument | undefined;
   
-  // RAG 相关功能
-  generateEmbedding: (id: string) => Promise<void>; // 为文档生成向量
-  searchByVector: (query: string, topK?: number) => Promise<RetrievalResult[]>; // 向量搜索
-  searchByKeyword: (query: string) => RetrievalResult[]; // 关键词搜索
-  hybridSearch: (query: string, topK?: number) => Promise<RetrievalResult[]>; // 混合搜索
+  // 三级检索功能（核心）
+  // 三级检索：只匹配片段，返回完整段落作为上下文
+  retrieveSegments: (query: string, documentIds: string[], topK?: number) => Promise<SegmentRetrievalResult[]>;
+  
+  // 获取片段的完整上下文（父段落）
+  getSegmentContext: (documentId: string, segmentId: string) => {
+    segment: KnowledgeSegment | undefined;
+    chunk: KnowledgeChunk | undefined;
+    document: KnowledgeDocument | undefined;
+  };
 }
 
-// 检索结果
-export interface RetrievalResult {
-  id: string;
-  title: string;
-  content: string;
-  sourceType: KnowledgeDocument['sourceType'];
-  score: number;
-  searchType: 'vector' | 'keyword' | 'hybrid';
-  metadata?: Record<string, any>;
+// 片段检索结果（三级检索）
+export interface SegmentRetrievalResult {
+  documentId: string;
+  documentTitle: string;
+  chunkId: string;
+  chunkContent: string;      // 完整段落内容（给 AI 的上下文）
+  chunkSummary: string;
+  segmentId: string;
+  segmentContent: string;    // 匹配到的片段内容
+  score: number;             // 相似度分数
 }
 
 export const useKnowledgeStore = create<KnowledgeState>()(
@@ -35,30 +44,61 @@ export const useKnowledgeStore = create<KnowledgeState>()(
     (set, get) => ({
       documents: [],
       
+      // 添加文档 - 自动切分并生成向量
       addDocument: async (doc) => {
         const id = `doc_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
         
-        // 如果有内容，自动生成向量
-        let embedding: number[] | undefined;
-        if (doc.content) {
-          try {
-            embedding = await getEmbedding(doc.content);
-          } catch (error) {
-            console.error('[KnowledgeStore] Failed to generate embedding:', error);
+        // 1. 切分文档为二级段落块和三级片段
+        const chunks = chunkDocument(doc.content);
+        
+        // 2. 为所有三级片段生成向量
+        console.log('[KnowledgeStore] 开始为文档生成向量:', doc.title);
+        const chunksWithEmbedding: KnowledgeChunk[] = [];
+        
+        for (const chunk of chunks) {
+          const segmentsWithEmbedding: KnowledgeSegment[] = [];
+          
+          for (const segment of chunk.segments) {
+            try {
+              const embedding = await getEmbedding(segment.content);
+              segmentsWithEmbedding.push({
+                ...segment,
+                embedding,
+              });
+              console.log('[KnowledgeStore] 片段向量生成成功:', segment.content.slice(0, 30) + '...');
+            } catch (error) {
+              console.error('[KnowledgeStore] 片段向量生成失败:', error);
+              // 即使失败也保留片段，只是没有向量
+              segmentsWithEmbedding.push(segment as KnowledgeSegment);
+            }
           }
+          
+          chunksWithEmbedding.push({
+            ...chunk,
+            segments: segmentsWithEmbedding,
+          });
         }
+        
+        // 3. 生成文档摘要
+        const summary = generateDocumentSummary(doc.content);
         
         const newDoc: KnowledgeDocument = {
           ...doc,
           id,
-          embedding,
-          embeddingUpdatedAt: embedding ? new Date().toISOString() : undefined,
+          summary,
+          chunks: chunksWithEmbedding,
           createdAt: new Date().toISOString(),
         };
         
         set((state) => ({
           documents: [newDoc, ...state.documents],
         }));
+        
+        console.log('[KnowledgeStore] 文档添加完成:', {
+          title: doc.title,
+          chunkCount: chunksWithEmbedding.length,
+          totalSegments: chunksWithEmbedding.reduce((sum, c) => sum + c.segments.length, 0),
+        });
         
         return id;
       },
@@ -81,167 +121,97 @@ export const useKnowledgeStore = create<KnowledgeState>()(
         return get().documents.find((d) => d.id === id);
       },
       
-      // 为文档生成向量
-      generateEmbedding: async (id) => {
-        const doc = get().getDocumentById(id);
-        if (!doc || !doc.content) return;
-        
-        try {
-          const embedding = await getEmbedding(doc.content);
-          get().updateDocument(id, {
-            embedding,
-            embeddingUpdatedAt: new Date().toISOString(),
-          });
-          console.log('[KnowledgeStore] Embedding generated for:', doc.title);
-        } catch (error) {
-          console.error('[KnowledgeStore] Failed to generate embedding:', error);
-        }
-      },
-      
-      // 向量搜索 (Dense Retrieval)
-      searchByVector: async (query, topK = 5) => {
+      // 核心：三级检索（只匹配片段，返回完整段落）
+      retrieveSegments: async (query, documentIds, topK = 5) => {
         const { documents } = get();
         
-        // 过滤出有向量的文档
-        const docsWithEmbedding = documents.filter(d => d.embedding && d.content);
+        // 过滤指定文档
+        const targetDocs = documents.filter(d => d.id && documentIds.includes(d.id));
         
-        if (docsWithEmbedding.length === 0) {
+        if (targetDocs.length === 0) {
+          console.log('[KnowledgeStore] 未找到指定文档');
           return [];
         }
+        
+        // 收集所有有向量的片段
+        const segmentsWithDoc: Array<{
+          segment: KnowledgeSegment;
+          chunk: KnowledgeChunk;
+          document: KnowledgeDocument;
+        }> = [];
+        
+        for (const doc of targetDocs) {
+          for (const chunk of doc.chunks || []) {
+            for (const segment of chunk.segments || []) {
+              if (segment.embedding) {
+                segmentsWithDoc.push({ segment, chunk, document: doc });
+              }
+            }
+          }
+        }
+        
+        if (segmentsWithDoc.length === 0) {
+          console.log('[KnowledgeStore] 文档中无可用的向量片段');
+          return [];
+        }
+        
+        console.log('[KnowledgeStore] 开始检索，总片段数:', segmentsWithDoc.length);
         
         try {
           // 生成查询向量
           const queryEmbedding = await getEmbedding(query);
           
-          // 计算相似度
-          const scored = docsWithEmbedding.map(doc => ({
-            doc,
-            score: cosineSimilarity(queryEmbedding, doc.embedding!),
+          // 计算所有片段的相似度
+          const scored = segmentsWithDoc.map(({ segment, chunk, document }) => ({
+            segment,
+            chunk,
+            document,
+            score: cosineSimilarity(queryEmbedding, segment.embedding!),
           }));
           
-          // 排序并返回前 K 个
-          return scored
+          // 排序并取 Top-K
+          const topResults = scored
             .sort((a, b) => b.score - a.score)
-            .slice(0, topK)
-            .map(({ doc, score }) => ({
-              id: doc.id!,
-              title: doc.title,
-              content: doc.content!,
-              sourceType: doc.sourceType,
-              score,
-              searchType: 'vector' as const,
-              metadata: {
-                originalFilename: doc.originalFilename,
-                createdAt: doc.createdAt,
-              },
-            }));
+            .slice(0, topK);
+          
+          console.log('[KnowledgeStore] 检索完成，Top-K 结果:', topResults.length);
+          
+          // 返回结果（包含完整段落作为上下文）
+          return topResults.map(({ segment, chunk, document, score }) => ({
+            documentId: document.id || '',  // 确保是 string
+            documentTitle: document.title || '未命名文档',  // 处理 undefined 情况
+            chunkId: chunk.id,
+            chunkContent: chunk.content,      // 完整段落给 AI
+            chunkSummary: chunk.summary,
+            segmentId: segment.id,
+            segmentContent: segment.content,  // 匹配片段
+            score,
+          }));
+          
         } catch (error) {
-          console.error('[KnowledgeStore] Vector search error:', error);
+          console.error('[KnowledgeStore] 向量检索失败:', error);
           return [];
         }
       },
       
-      // 关键词搜索 (Sparse Retrieval - BM25 简化版)
-      searchByKeyword: (query) => {
-        const { documents } = get();
-        const queryTerms = query.toLowerCase().split(/\s+/).filter(Boolean);
+      // 获取片段的完整上下文
+      getSegmentContext: (documentId, segmentId) => {
+        const document = get().getDocumentById(documentId);
+        if (!document) return { segment: undefined, chunk: undefined, document: undefined };
         
-        if (queryTerms.length === 0) return [];
-        
-        const scored = documents
-          .filter(d => d.content)
-          .map(doc => {
-            const content = (doc.title + ' ' + doc.content!).toLowerCase();
-            
-            // 计算匹配分数 (简化 BM25)
-            let score = 0;
-            queryTerms.forEach(term => {
-              const regex = new RegExp(term, 'g');
-              const matches = content.match(regex);
-              if (matches) {
-                score += matches.length;
-              }
-            });
-            
-            // 标题匹配加权
-            const titleLower = doc.title.toLowerCase();
-            queryTerms.forEach(term => {
-              if (titleLower.includes(term)) {
-                score += 5;
-              }
-            });
-            
-            return { doc, score };
-          })
-          .filter(({ score }) => score > 0);
-        
-        return scored
-          .sort((a, b) => b.score - a.score)
-          .map(({ doc, score }) => ({
-            id: doc.id!,
-            title: doc.title,
-            content: doc.content!,
-            sourceType: doc.sourceType,
-            score,
-            searchType: 'keyword' as const,
-            metadata: {
-              originalFilename: doc.originalFilename,
-              createdAt: doc.createdAt,
-            },
-          }));
-      },
-      
-      // 混合搜索 (Dense + Sparse + RRF 融合)
-      hybridSearch: async (query, topK = 5) => {
-        const [vectorResults, keywordResults] = await Promise.all([
-          get().searchByVector(query, topK * 2),
-          get().searchByKeyword(query),
-        ]);
-        
-        // RRF (Reciprocal Rank Fusion)
-        const k = 60; // RRF 常数
-        const scores = new Map<string, { result: RetrievalResult; rrfScore: number }>();
-        
-        // 合并向量搜索结果
-        vectorResults.forEach((result, index) => {
-          const rank = index + 1;
-          const existing = scores.get(result.id);
-          if (existing) {
-            existing.rrfScore += 1 / (k + rank);
-          } else {
-            scores.set(result.id, {
-              result: { ...result, searchType: 'hybrid' },
-              rrfScore: 1 / (k + rank),
-            });
+        for (const chunk of document.chunks || []) {
+          const segment = chunk.segments?.find(s => s.id === segmentId);
+          if (segment) {
+            return { segment, chunk, document };
           }
-        });
+        }
         
-        // 合并关键词搜索结果
-        keywordResults.forEach((result, index) => {
-          const rank = index + 1;
-          const existing = scores.get(result.id);
-          if (existing) {
-            existing.rrfScore += 1 / (k + rank);
-          } else {
-            scores.set(result.id, {
-              result: { ...result, searchType: 'hybrid' },
-              rrfScore: 1 / (k + rank),
-            });
-          }
-        });
-        
-        // 按 RRF 分数排序
-        return Array.from(scores.values())
-          .sort((a, b) => b.rrfScore - a.rrfScore)
-          .slice(0, topK)
-          .map(({ result, rrfScore }) => ({
-            ...result,
-            score: rrfScore,
-          }));
+        return { segment: undefined, chunk: undefined, document: undefined };
       },
     }),
     {
       name: 'knowledge-storage',
+      partialize: (state) => ({ documents: state.documents }),
     }
   )
 );

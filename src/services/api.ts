@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { JDAnalysis } from '@/types';
+import { JDAnalysis, JDAnalyzerConfig } from '@/types';
 
 // 创建 axios 实例
 const api = axios.create({
@@ -59,8 +59,8 @@ export const authApi = {
 // JD 分析 API
 export const jdApi = {
   // 分析 JD
-  analyze: async (text: string): Promise<{ success: boolean; data?: { summary: any; tags: string[] }; error?: string }> => {
-    return api.post('/jd/analyze', { jdText: text });
+  analyze: async (text: string, config?: JDAnalyzerConfig): Promise<{ success: boolean; data?: { summary: any; tags: string[] }; error?: string }> => {
+    return api.post('/jd/analyze', { jdText: text, config });
   },
 
   // 保存 JD

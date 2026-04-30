@@ -65,7 +65,7 @@ export default function JDPage() {
   const [loading, setLoading] = useState(false);
   const [analysis, setAnalysis] = useState<JDAnalysisResult['summary'] | null>(null);
   const [tags, setTags] = useState<string[]>([]);
-  const { setJDAnalysis, jdAnalysis } = useInterviewStore();
+  const { setJDAnalysis, jdAnalysis, jdAnalyzerConfig } = useInterviewStore();
   const { addJD } = useJDStore();
   const { user } = useAuthStore();
 
@@ -77,7 +77,7 @@ export default function JDPage() {
 
     setLoading(true);
     try {
-      const result = await jdApi.analyze(values.jdText);
+      const result = await jdApi.analyze(values.jdText, jdAnalyzerConfig);
       console.log('Analysis Result:', result);
 
       if (result.success && result.data && result.data.summary) {

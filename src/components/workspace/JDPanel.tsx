@@ -13,6 +13,7 @@ import {
 } from '@ant-design/icons';
 import { useWorkspaceStore } from '@/stores/workspaceStore';
 import { useJDStore } from '@/stores/jdStore';
+import { useInterviewStore } from '@/stores/interviewStore';
 import { jdApi } from '@/services/api';
 import { JDAnalysisModal } from './JDAnalysisModal';
 import { WorkspaceJD, JDAnalysis } from '@/types';
@@ -22,6 +23,7 @@ const { Text, Title } = Typography;
 export function JDPanel() {
   const { currentWorkspace, addJDToWorkspace, removeJDFromWorkspace, selectedJDs, selectJD, deselectJD } = useWorkspaceStore();
   const { addJD } = useJDStore();
+  const { jdAnalyzerConfig } = useInterviewStore();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [analyzingJD, setAnalyzingJD] = useState<WorkspaceJD | null>(null);
   const [loading, setLoading] = useState(false);
@@ -30,7 +32,7 @@ export function JDPanel() {
   const handleAnalyze = async (jdText: string, jdTitle: string) => {
     setLoading(true);
     try {
-      const result = await jdApi.analyze(jdText);
+      const result = await jdApi.analyze(jdText, jdAnalyzerConfig);
 
       if (!result.success || !result.data) {
         message.error(result.error || 'JD 分析失败');

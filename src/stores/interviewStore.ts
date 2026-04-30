@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { InterviewSession, ChatMessage, InterviewerConfig, InterviewerPreset, JDAnalysis, Resume, KnowledgeDocument } from '@/types';
+import { InterviewSession, ChatMessage, InterviewerConfig, InterviewerPreset, JDAnalysis, Resume, KnowledgeDocument, JDAnalyzerConfig, JDAnalyzerPreset } from '@/types';
 
 interface InterviewState {
   currentSession: InterviewSession | null;
@@ -18,6 +18,10 @@ interface InterviewState {
   // Presets
   presets: InterviewerPreset[];
   activePresetId: string | null;
+  // JD Analyzer
+  jdAnalyzerConfig: JDAnalyzerConfig;
+  jdAnalyzerPresets: JDAnalyzerPreset[];
+  activeJDAnalyzerPresetId: string | null;
   // Actions
   setCurrentSession: (session: InterviewSession | null) => void;
   addMessage: (message: ChatMessage) => void;
@@ -41,7 +45,130 @@ interface InterviewState {
   deletePreset: (id: string) => void;
   loadPreset: (id: string) => void;
   setActivePresetId: (id: string | null) => void;
+  // JD Analyzer actions
+  setJDAnalyzerConfig: (config: Partial<JDAnalyzerConfig>) => void;
+  addJDAnalyzerPreset: (preset: Omit<JDAnalyzerPreset, 'id' | 'createdAt'>) => string;
+  deleteJDAnalyzerPreset: (id: string) => void;
+  loadJDAnalyzerPreset: (id: string) => void;
+  setActiveJDAnalyzerPresetId: (id: string | null) => void;
 }
+
+// 默认 JD 分析师配置
+const defaultJDAnalyzerConfig: JDAnalyzerConfig = {
+  dimensions: {
+    jobOverview: true,
+    dailyWork: true,
+    implicitRequirements: true,
+    developmentProspect: true,
+    skillTags: true,
+    companyBackground: false,
+    salaryAnalysis: false,
+    interviewFocus: true,
+  },
+  style: 'detailed',
+  language: 'zh',
+  tagCount: 5,
+  systemPrompt: '',
+};
+
+// JD 分析师系统预设
+const builtInJDAnalyzerPresets: JDAnalyzerPreset[] = [
+  {
+    id: 'builtin-jd-standard',
+    name: '标准分析',
+    description: '全面的4维度分析，适合大多数岗位',
+    isBuiltIn: true,
+    createdAt: Date.now(),
+    config: {
+      ...defaultJDAnalyzerConfig,
+    },
+  },
+  {
+    id: 'builtin-jd-technical',
+    name: '技术岗专用',
+    description: '侧重技能栈和技术深度分析',
+    isBuiltIn: true,
+    createdAt: Date.now(),
+    config: {
+      dimensions: {
+        jobOverview: true,
+        dailyWork: true,
+        implicitRequirements: true,
+        developmentProspect: true,
+        skillTags: true,
+        companyBackground: false,
+        salaryAnalysis: true,
+        interviewFocus: true,
+      },
+      style: 'detailed',
+      language: 'zh',
+      tagCount: 8,
+      systemPrompt: '',
+    },
+  },
+  {
+    id: 'builtin-jd-management',
+    name: '管理岗专用',
+    description: '侧重团队管理和业务视野',
+    isBuiltIn: true,
+    createdAt: Date.now(),
+    config: {
+      dimensions: {
+        jobOverview: true,
+        dailyWork: true,
+        implicitRequirements: true,
+        developmentProspect: true,
+        skillTags: false,
+        companyBackground: true,
+        salaryAnalysis: true,
+        interviewFocus: true,
+      },
+      style: 'professional',
+      language: 'zh',
+      tagCount: 5,
+      systemPrompt: '',
+    },
+  },
+];
+
+// 加载保存的 JD 分析师配置
+const loadSavedJDAnalyzerConfig = (): JDAnalyzerConfig => {
+  if (typeof window === 'undefined') return defaultJDAnalyzerConfig;
+  try {
+    const saved = localStorage.getItem('jd_analyzer_config');
+    if (saved) {
+      return { ...defaultJDAnalyzerConfig, ...JSON.parse(saved) };
+    }
+  } catch (e) {
+    console.error('Failed to load JD analyzer config:', e);
+  }
+  return defaultJDAnalyzerConfig;
+};
+
+// 加载保存的 JD 分析师预设
+const loadSavedJDAnalyzerPresets = (): JDAnalyzerPreset[] => {
+  if (typeof window === 'undefined') return [];
+  try {
+    const saved = localStorage.getItem('jd_analyzer_presets');
+    if (saved) {
+      return JSON.parse(saved);
+    }
+  } catch (e) {
+    console.error('Failed to load JD analyzer presets:', e);
+  }
+  return [];
+};
+
+// 加载活跃 JD 分析师预设 ID
+const loadActiveJDAnalyzerPresetId = (): string | null => {
+  if (typeof window === 'undefined') return null;
+  try {
+    return localStorage.getItem('jd_analyzer_active_preset_id');
+  } catch (e) {
+    console.error('Failed to load active JD analyzer preset id:', e);
+  }
+  return null;
+};
 
 const defaultInterviewerConfig: InterviewerConfig = {
   name: '友好型面试官',
@@ -214,6 +341,10 @@ export const useInterviewStore = create<InterviewState>((set, get) => ({
   optimizedResume: '',
   presets: [...builtInPresets, ...loadSavedPresets()],
   activePresetId: loadActivePresetId(),
+  // JD Analyzer state
+  jdAnalyzerConfig: loadSavedJDAnalyzerConfig(),
+  jdAnalyzerPresets: [...builtInJDAnalyzerPresets, ...loadSavedJDAnalyzerPresets()],
+  activeJDAnalyzerPresetId: loadActiveJDAnalyzerPresetId(),
   setCurrentSession: (session) => set({ currentSession: session }),
   addMessage: (message) =>
     set((state) => ({ messages: [...state.messages, message] })),
@@ -312,6 +443,69 @@ export const useInterviewStore = create<InterviewState>((set, get) => ({
         localStorage.setItem('interviewer_active_preset_id', id);
       } else {
         localStorage.removeItem('interviewer_active_preset_id');
+      }
+    }
+  },
+  // JD Analyzer actions
+  setJDAnalyzerConfig: (config) =>
+    set((state) => {
+      const newConfig = { ...state.jdAnalyzerConfig, ...config };
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('jd_analyzer_config', JSON.stringify(newConfig));
+      }
+      return { jdAnalyzerConfig: newConfig };
+    }),
+  addJDAnalyzerPreset: (preset) => {
+    const id = `jd-preset-${Date.now()}`;
+    const newPreset: JDAnalyzerPreset = {
+      ...preset,
+      id,
+      createdAt: Date.now(),
+    };
+    set((state) => {
+      const userPresets = state.jdAnalyzerPresets.filter((p) => !p.isBuiltIn);
+      const newUserPresets = [...userPresets, newPreset];
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('jd_analyzer_presets', JSON.stringify(newUserPresets));
+      }
+      return { jdAnalyzerPresets: [...builtInJDAnalyzerPresets, ...newUserPresets] };
+    });
+    return id;
+  },
+  deleteJDAnalyzerPreset: (id) => {
+    set((state) => {
+      const newPresets = state.jdAnalyzerPresets.filter((p) => p.id !== id);
+      const userPresets = newPresets.filter((p) => !p.isBuiltIn);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('jd_analyzer_presets', JSON.stringify(userPresets));
+      }
+      if (state.activeJDAnalyzerPresetId === id) {
+        localStorage.removeItem('jd_analyzer_active_preset_id');
+        return { jdAnalyzerPresets: newPresets, activeJDAnalyzerPresetId: null };
+      }
+      return { jdAnalyzerPresets: newPresets };
+    });
+  },
+  loadJDAnalyzerPreset: (id) => {
+    const preset = get().jdAnalyzerPresets.find((p) => p.id === id);
+    if (preset) {
+      set({
+        jdAnalyzerConfig: preset.config,
+        activeJDAnalyzerPresetId: id,
+      });
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('jd_analyzer_active_preset_id', id);
+        localStorage.setItem('jd_analyzer_config', JSON.stringify(preset.config));
+      }
+    }
+  },
+  setActiveJDAnalyzerPresetId: (id) => {
+    set({ activeJDAnalyzerPresetId: id });
+    if (typeof window !== 'undefined') {
+      if (id) {
+        localStorage.setItem('jd_analyzer_active_preset_id', id);
+      } else {
+        localStorage.removeItem('jd_analyzer_active_preset_id');
       }
     }
   },

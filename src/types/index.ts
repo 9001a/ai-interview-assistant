@@ -84,6 +84,35 @@ export interface Resume {
   updatedAt: string;
 }
 
+// JD 分析师配置
+export interface JDAnalyzerConfig {
+  dimensions: {
+    jobOverview: boolean;
+    dailyWork: boolean;
+    implicitRequirements: boolean;
+    developmentProspect: boolean;
+    skillTags: boolean;
+    companyBackground: boolean;
+    salaryAnalysis: boolean;
+    interviewFocus: boolean;
+  };
+  style: 'detailed' | 'concise' | 'professional';
+  language: 'zh' | 'en';
+  tagCount: number;
+  systemPrompt?: string;
+  customDescription?: string;
+}
+
+// JD 分析师预设模板
+export interface JDAnalyzerPreset {
+  id: string;
+  name: string;
+  description: string;
+  config: JDAnalyzerConfig;
+  isBuiltIn: boolean;
+  createdAt: number;
+}
+
 // 面试会话类型
 export interface InterviewSession {
   id: string;

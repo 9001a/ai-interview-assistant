@@ -1,4 +1,5 @@
 import OpenAI from 'openai';
+import type { JDAnalyzerConfig } from '@/types';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -18,29 +19,103 @@ export interface JDAnalysisResult {
   tags: string[];
 }
 
-export async function analyzeJD(jdText: string): Promise<JDAnalysisResult> {
-  const prompt = `你是一位专业的JD分析专家。请基于以下目标JD内容，结合行业通用标准，客观、全面地完成4个维度的分析。
+// 分析维度映射
+const DIMENSION_MAP: Record<string, { name: string; desc: string }> = {
+  jobOverview: { name: '岗位概述', desc: '结合JD的岗位职责、定位，说明核心定位、本质工作内容、核心工作价值' },
+  dailyWork: { name: '日常工作', desc: '基于JD的岗位职责板块，拆解日常工作内容' },
+  implicitRequirements: { name: '隐含要求', desc: '结合JD和行业通用标准，拆解隐含任职要求' },
+  developmentProspect: { name: '发展前景', desc: '分析职业发展路径，包括纵向晋升、横向转型' },
+  skillTags: { name: '技能标签', desc: '提取核心技能标签' },
+  companyBackground: { name: '公司背景', desc: '分析公司规模、行业地位、发展阶段等' },
+  salaryAnalysis: { name: '薪资分析', desc: '根据JD信息和行业水平分析薪资范围' },
+  interviewFocus: { name: '面试重点', desc: '预测面试可能重点考察的能力和知识点' },
+};
 
-要求：
+// 构建分析维度的提示文本
+function buildDimensionsPrompt(dimensions: JDAnalyzerConfig['dimensions']): string {
+  const enabled = Object.entries(dimensions)
+    .filter(([_, value]) => value)
+    .map(([key]) => {
+      const dim = DIMENSION_MAP[key];
+      return dim ? `${dim.name}：${dim.desc}` : key;
+    });
+  
+  return enabled.join('\n');
+}
+
+// 构建默认的分析 Prompt
+function buildDefaultAnalyzePrompt(config: JDAnalyzerConfig): string {
+  const dimensionsText = buildDimensionsPrompt(config.dimensions);
+  const styleMap = {
+    detailed: '详细、深入',
+    concise: '简洁、凝练',
+    professional: '专业、严谨',
+  };
+  
+  return `你是一位专业的JD分析专家。请基于以下目标JD内容，结合行业通用标准，客观、全面地完成分析。
+
+分析维度：
+${dimensionsText}
+
+分析要求：
 - 全程贴合JD原文，不添加无关内容、不主观臆断
-- 语言简洁专业，同时兼顾易懂性
+- 语言${styleMap[config.style]}，同时兼顾易懂性
 - 不堆砌JD原文，用自己的语言提炼总结
-- 提取3-5个核心技能标签
+- 提取${config.tagCount}个核心技能标签
 - 严格按以下JSON格式输出
 
 目标JD：
-${jdText}
+{{jd_text}}
 
 请按以下格式输出JSON（不要其他内容）：
 {
   "summary": {
-    "overview": "岗位概述：结合JD的岗位职责、定位，用通俗专业的语言说明核心定位、本质工作内容、服务于哪个部门/业务板块、核心工作价值。重点说明该岗位实际要干的事。",
-    "hiddenRequirements": "隐含要求：结合JD明确要求和行业通用标准，延伸拆解隐含任职要求。包括：1.技能类（结合JD技能延伸隐含技能）；2.经验类（JD未明确但行业通用的经验）；3.软实力（结合岗位特性推导的沟通、协调、细节敏感度等）；4.其他隐含要求（学历、年限、加班、出差等行业默认门槛）。",
-    "dailyWork": "日常工作：严格基于JD的岗位职责板块，拆解并延伸日常工作内容，贴合实际工作场景。结合JD要求延伸为具体工作事项，确保每一项都能对应JD原文。",
-    "prospects": "发展前景：结合JD岗位层级、所属行业，客观分析职业发展路径。包括：1.纵向晋升（初级→中级→资深→主管）；2.横向转型（基于核心技能可转型的相关岗位）；3.发展优势（行业需求、核心竞争力）。"
+    "overview": "岗位概述内容...",
+    "hiddenRequirements": "隐含要求内容...",
+    "dailyWork": "日常工作内容...",
+    "prospects": "发展前景内容..."
   },
   "tags": ["技能标签1", "技能标签2", "技能标签3"]
 }`;
+}
+
+export async function analyzeJD(
+  jdText: string,
+  config?: JDAnalyzerConfig
+): Promise<JDAnalysisResult> {
+  // 使用传入的配置或默认配置
+  const analyzerConfig = config || {
+    dimensions: {
+      jobOverview: true,
+      dailyWork: true,
+      implicitRequirements: true,
+      developmentProspect: true,
+      skillTags: true,
+      companyBackground: false,
+      salaryAnalysis: false,
+      interviewFocus: true,
+    },
+    style: 'detailed' as const,
+    language: 'zh' as const,
+    tagCount: 5,
+    systemPrompt: '',
+  };
+
+  // 构建 Prompt
+  let prompt: string;
+  if (analyzerConfig.systemPrompt) {
+    // 使用自定义 System Prompt，替换变量
+    const dimensionsText = buildDimensionsPrompt(analyzerConfig.dimensions);
+    prompt = replaceTemplateVars(analyzerConfig.systemPrompt, {
+      analysis_dimensions: dimensionsText,
+      tag_count: String(analyzerConfig.tagCount),
+      jd_text: jdText,
+    });
+  } else {
+    // 使用默认 Prompt
+    const basePrompt = buildDefaultAnalyzePrompt(analyzerConfig);
+    prompt = basePrompt.replace('{{jd_text}}', jdText);
+  }
 
   const response = await openai.chat.completions.create({
     model: process.env.OPENAI_MODEL || 'gpt-4o-mini',

@@ -26,34 +26,13 @@ import {
 import { useInterviewStore } from '@/stores/interviewStore';
 import type { InterviewerConfig } from '@/types';
 import { InterviewerConfigPanel } from './InterviewerConfigPanel';
+import { JDAnalyzerConfigPanel } from './JDAnalyzerConfigPanel';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
 const { Panel } = Collapse;
 
-// JD 分析师设置组件（占位）
-function JDAnalyzerSettings() {
-  return (
-    <Space direction="vertical" style={{ width: '100%' }}>
-      <Alert
-        message="功能开发中"
-        description="JD 分析师的详细配置将在这里提供，包括分析模型选择、分析维度配置等。"
-        type="info"
-        showIcon
-      />
-      <Card size="small" title="基础配置" style={{ backgroundColor: '#fafafa' }}>
-        <Form layout="vertical">
-          <Form.Item label="分析模型">
-            <Input placeholder="gpt-4o-mini" disabled />
-          </Form.Item>
-          <Form.Item label="分析深度">
-            <Input placeholder="标准" disabled />
-          </Form.Item>
-        </Form>
-      </Card>
-    </Space>
-  );
-}
+
 
 // 系统设置组件
 function SystemSettings() {
@@ -202,12 +181,12 @@ export default function SettingsPage() {
               <Space>
                 <FileTextOutlined style={{ color: '#52c41a' }} />
                 <Text strong>JD 分析师设置</Text>
-                <Tag color="default" style={{ fontSize: 12, padding: '0 6px', lineHeight: '18px' }}>
-                  开发中
+                <Tag color="success" style={{ fontSize: 12, padding: '0 6px', lineHeight: '18px' }}>
+                  配置分析维度、Prompt模板
                 </Tag>
               </Space>
             ),
-            children: <JDAnalyzerSettings />,
+            children: <JDAnalyzerConfigPanel />,
           },
           {
             key: 'interviewer',

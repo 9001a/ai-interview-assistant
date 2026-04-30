@@ -69,7 +69,7 @@ export default function InterviewReport({ interview, onBack }: InterviewReportPr
         messages,
         jdAnalysis: jd ? {
           summary: jd.summary,
-          tags: jd.tags,
+          skillTags: jd.skillTags,
         } : undefined,
         resume: resume ? {
           title: resume.title,

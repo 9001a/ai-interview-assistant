@@ -176,17 +176,17 @@ export default function JDAndResumePage() {
                               <Text type="secondary" className="text-xs">
                                 上传时间: {formatDateTime(jd.createdAt)}
                               </Text>
-                              {jd.tags && jd.tags.length > 0 && (
+                              {jd.skillTags && jd.skillTags.length > 0 && (
                                 <div className="flex flex-wrap gap-1">
-                                  {jd.tags.slice(0, 3).map((tag, idx) => (
+                                  {jd.skillTags.slice(0, 3).map((tag: string, idx: number) => (
                                     <Tag key={idx} color="blue">{tag}</Tag>
                                   ))}
-                                  {jd.tags.length > 3 && <Tag>+{jd.tags.length - 3}</Tag>}
+                                  {jd.skillTags.length > 3 && <Tag>+{jd.skillTags.length - 3}</Tag>}
                                 </div>
                               )}
-                              {jd.summary?.overview && (
+                              {jd.summary?.jobOverview && (
                                 <Text ellipsis className="max-w-2xl">
-                                  {jd.summary.overview.slice(0, 100)}...
+                                  {jd.summary.jobOverview.slice(0, 100)}...
                                 </Text>
                               )}
                             </Space>
@@ -299,22 +299,22 @@ export default function JDAndResumePage() {
             </Descriptions.Item>
             <Descriptions.Item label="技能标签">
               <Space wrap>
-                {viewingJD.tags?.map((tag, idx) => (
+                {viewingJD.skillTags?.map((tag, idx) => (
                   <Tag key={idx} color="blue">{tag}</Tag>
                 ))}
               </Space>
             </Descriptions.Item>
             <Descriptions.Item label="岗位概述">
-              {viewingJD.summary?.overview}
+              {viewingJD.summary?.jobOverview}
             </Descriptions.Item>
             <Descriptions.Item label="隐含要求">
-              {viewingJD.summary?.hiddenRequirements}
+              {viewingJD.summary?.implicitRequirements}
             </Descriptions.Item>
             <Descriptions.Item label="日常工作">
               {viewingJD.summary?.dailyWork}
             </Descriptions.Item>
             <Descriptions.Item label="发展前景">
-              {viewingJD.summary?.prospects}
+              {viewingJD.summary?.developmentProspect}
             </Descriptions.Item>
             <Descriptions.Item label="原始文本">
               <div style={{ maxHeight: 200, overflow: 'auto', background: '#f5f5f5', padding: 8 }}>

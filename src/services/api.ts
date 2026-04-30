@@ -59,7 +59,7 @@ export const authApi = {
 // JD 分析 API
 export const jdApi = {
   // 分析 JD
-  analyze: async (text: string, config?: JDAnalyzerConfig): Promise<{ success: boolean; data?: { summary: any; tags: string[] }; error?: string }> => {
+  analyze: async (text: string, config?: JDAnalyzerConfig): Promise<{ success: boolean; data?: { summary: any; skillTags: string[] }; error?: string }> => {
     return api.post('/jd/analyze', { jdText: text, config });
   },
 

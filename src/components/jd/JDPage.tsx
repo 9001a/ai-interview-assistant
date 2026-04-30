@@ -82,7 +82,7 @@ export default function JDPage() {
 
       if (result.success && result.data && result.data.summary) {
         setAnalysis(result.data.summary);
-        setTags(result.data.tags);
+        setTags(result.data.skillTags || []);
         
         // 保存到全局 JD Store
         const jdAnalysisData: JDAnalysis = {
@@ -90,7 +90,7 @@ export default function JDPage() {
           userId: user?.id || 'guest',
           originalText: values.jdText,
           summary: result.data.summary,
-          tags: result.data.tags || [],
+          skillTags: result.data.skillTags || [],
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         };
@@ -193,10 +193,10 @@ export default function JDPage() {
                   children: (
                     <div className="p-4 bg-[#FFFBF5] rounded-lg min-h-[200px]">
                       <div className="whitespace-pre-wrap leading-relaxed text-gray-700">
-                        {item.key === 'overview' && analysis.overview}
-                        {item.key === 'requirements' && analysis.hiddenRequirements}
+                        {item.key === 'overview' && analysis.jobOverview}
+                        {item.key === 'requirements' && analysis.implicitRequirements}
                         {item.key === 'daily' && analysis.dailyWork}
-                        {item.key === 'prospects' && analysis.prospects}
+                        {item.key === 'prospects' && analysis.developmentProspect}
                       </div>
                     </div>
                   ),

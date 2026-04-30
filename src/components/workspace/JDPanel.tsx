@@ -44,7 +44,7 @@ export function JDPanel() {
         title: jdTitle,
         originalText: jdText,
         summary: result.data.summary,
-        tags: result.data.tags,
+        skillTags: result.data.skillTags,
       });
 
       // 同时添加到全局 JD Store
@@ -53,7 +53,7 @@ export function JDPanel() {
         userId: currentWorkspace!.userId,
         originalText: jdText,
         summary: result.data.summary,
-        tags: result.data.tags,
+        skillTags: result.data.skillTags,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
@@ -187,7 +187,7 @@ export function JDPanel() {
                   </div>
 
                   <Space wrap className="mb-3">
-                    {jd.tags.map((tag, idx) => (
+                    {jd.skillTags.map((tag: string, idx: number) => (
                       <Tag key={idx} color="blue" icon={<TagOutlined />}>
                         {tag}
                       </Tag>
@@ -197,7 +197,7 @@ export function JDPanel() {
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
                     <div className="flex items-center gap-2">
                       <ReadOutlined className="text-[#e1b382]" />
-                      <Text type="secondary" ellipsis>{jd.summary.overview}</Text>
+                      <Text type="secondary" ellipsis>{jd.summary.jobOverview}</Text>
                     </div>
                     <div className="flex items-center gap-2">
                       <CalendarOutlined className="text-[#e1b382]" />
@@ -260,7 +260,7 @@ function JDDetailModal({
           </div>
 
           <Space wrap className="mb-4">
-            {jd.tags.map((tag, idx) => (
+            {jd.skillTags.map((tag: string, idx: number) => (
               <Tag key={idx} color="blue">{tag}</Tag>
             ))}
           </Space>
@@ -270,12 +270,12 @@ function JDDetailModal({
           <div className="space-y-4">
             <div>
               <Title level={5}>岗位概述</Title>
-              <p className="text-gray-700">{jd.summary.overview}</p>
+              <p className="text-gray-700">{jd.summary.jobOverview}</p>
             </div>
 
             <div>
               <Title level={5}>隐藏要求</Title>
-              <p className="text-gray-700">{jd.summary.hiddenRequirements}</p>
+              <p className="text-gray-700">{jd.summary.implicitRequirements}</p>
             </div>
 
             <div>
@@ -285,7 +285,7 @@ function JDDetailModal({
 
             <div>
               <Title level={5}>发展前景</Title>
-              <p className="text-gray-700">{jd.summary.prospects}</p>
+              <p className="text-gray-700">{jd.summary.developmentProspect}</p>
             </div>
 
             <Divider />

@@ -118,12 +118,15 @@ export default function InterviewPage() {
             userId: workspace.userId,
             originalText: jd.originalText,
             summary: {
-              overview: jd.title,
-              hiddenRequirements: '',
+              jobOverview: jd.title,
+              implicitRequirements: '',
               dailyWork: '',
-              prospects: '',
+              developmentProspect: '',
+              companyBackground: '',
+              salaryAnalysis: '',
+              interviewFocus: '',
             },
-            tags: jd.tags,
+            skillTags: jd.skillTags || [],
             createdAt: jd.createdAt,
             updatedAt: jd.createdAt,
           };
@@ -237,7 +240,7 @@ export default function InterviewPage() {
     // 所有面试都使用全局数据库的数据（数据互用）
     const jdOpts = jdList.map((jd) => ({
       value: jd.id!,
-      label: jd.summary?.overview?.slice(0, 50) || '未命名JD',
+      label: jd.summary?.jobOverview?.slice(0, 50) || '未命名JD',
       jd,
       source: 'global' as const,
     }));
@@ -446,7 +449,7 @@ export default function InterviewPage() {
       // Save to history
       useHistoryStore.getState().addRecord({
         type: 'interview',
-        title: jdAnalysis ? (jdAnalysis.summary.overview || '工作区面试') : '工作区面试',
+        title: jdAnalysis ? (jdAnalysis.summary.jobOverview || '工作区面试') : '工作区面试',
         content: {
           jdAnalysis,
           resume: selectedResume,
@@ -466,7 +469,7 @@ export default function InterviewPage() {
       // 保存到历史记录 - 只保存 content，不需要完整的 WorkspaceInterview
       useHistoryStore.getState().addRecord({
         type: 'interview',
-        title: jdAnalysis ? (jdAnalysis.summary.overview || 'AI 面试') : 'AI 面试',
+        title: jdAnalysis ? (jdAnalysis.summary.jobOverview || 'AI 面试') : 'AI 面试',
         content: {
           jdAnalysis,
           resume: selectedResume,

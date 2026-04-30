@@ -11,12 +11,15 @@ const isMockMode = !process.env.OPENAI_API_KEY || process.env.USE_MOCK_AI === 't
 
 export interface JDAnalysisResult {
   summary: {
-    overview: string;
-    hiddenRequirements: string;
+    jobOverview: string;
     dailyWork: string;
-    prospects: string;
+    implicitRequirements: string;
+    developmentProspect: string;
+    companyBackground: string;
+    salaryAnalysis: string;
+    interviewFocus: string;
   };
-  tags: string[];
+  skillTags: string[];
 }
 
 // 分析维度映射（与 JDAnalyzerConfig 中的 key 保持一致）
@@ -140,22 +143,28 @@ export async function analyzeJD(
     const result = JSON.parse(content);
     return {
       summary: {
-        overview: result.summary?.overview || '',
-        hiddenRequirements: result.summary?.hiddenRequirements || '',
+        jobOverview: result.summary?.jobOverview || '',
         dailyWork: result.summary?.dailyWork || '',
-        prospects: result.summary?.prospects || '',
+        implicitRequirements: result.summary?.implicitRequirements || '',
+        developmentProspect: result.summary?.developmentProspect || '',
+        companyBackground: result.summary?.companyBackground || '',
+        salaryAnalysis: result.summary?.salaryAnalysis || '',
+        interviewFocus: result.summary?.interviewFocus || '',
       },
-      tags: result.tags || [],
+      skillTags: result.tags || result.skillTags || [],
     };
   } catch {
     return {
       summary: {
-        overview: '分析失败，请重试',
-        hiddenRequirements: '',
+        jobOverview: '分析失败，请重试',
         dailyWork: '',
-        prospects: '',
+        implicitRequirements: '',
+        developmentProspect: '',
+        companyBackground: '',
+        salaryAnalysis: '',
+        interviewFocus: '',
       },
-      tags: [],
+      skillTags: [],
     };
   }
 }

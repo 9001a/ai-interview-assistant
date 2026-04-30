@@ -50,12 +50,15 @@ export interface JDAnalysis {
   title?: string;
   originalText: string;
   summary: {
-    overview: string;
-    hiddenRequirements: string;
+    jobOverview: string;
     dailyWork: string;
-    prospects: string;
+    implicitRequirements: string;
+    developmentProspect: string;
+    companyBackground: string;
+    salaryAnalysis: string;
+    interviewFocus: string;
   };
-  tags: string[];
+  skillTags: string[];
   createdAt: string;
   updatedAt: string;
 }
@@ -225,12 +228,15 @@ export interface WorkspaceJD {
   title: string;
   originalText: string;
   summary: {
-    overview: string;
-    hiddenRequirements: string;
+    jobOverview: string;
+    implicitRequirements: string;
     dailyWork: string;
-    prospects: string;
+    developmentProspect: string;
+    companyBackground: string;
+    salaryAnalysis: string;
+    interviewFocus: string;
   };
-  tags: string[];
+  skillTags: string[];
   createdAt: string;
 }
 

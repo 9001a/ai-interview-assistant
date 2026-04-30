@@ -43,7 +43,7 @@ export const useHistoryStore = create<HistoryStore>()(
       addJDAnalysisRecord: (jd, source, workspaceId, workspaceName) => {
         get().addRecord({
           type: 'jd_analysis',
-          title: jd.summary.overview || 'JD 分析',
+          title: jd.summary.jobOverview || 'JD 分析',
           content: jd,
           source,
           workspaceId,

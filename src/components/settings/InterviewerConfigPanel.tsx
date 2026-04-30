@@ -342,7 +342,7 @@ ${paramConfig.features.doScoring ? '- 会进行评分' : ''}
     <Space direction="vertical" style={{ width: '100%' }} size="large">
       <Alert
         message="选择预设模板"
-        description="根据面试场景选择合适的面试官风格"
+        description="使用系统预设的面试官风格。点击后会直接应用该模板的 System Prompt。"
         type="info"
         showIcon
       />
@@ -395,8 +395,8 @@ ${paramConfig.features.doScoring ? '- 会进行评分' : ''}
   const renderParamAdjust = () => (
     <Space direction="vertical" style={{ width: '100%' }} size="large">
       <Alert
-        message="调整参数"
-        description="通过滑动条和选项调整面试官行为"
+        message="调整参数生成 Prompt"
+        description="通过参数调整面试官行为，点击「生成 Prompt」后会根据这些参数生成新的 System Prompt。这将覆盖当前已有的 Prompt。"
         type="info"
         showIcon
       />
@@ -570,9 +570,9 @@ ${paramConfig.features.doScoring ? '- 会进行评分' : ''}
   const renderFreeDescription = () => (
     <Space direction="vertical" style={{ width: '100%' }} size="large">
       <Alert
-        message="自由描述"
-        description="用文字描述您期望的面试官风格，AI 会为您生成 Prompt"
-        type="info"
+        message="自由描述生成 Prompt"
+        description="用文字描述您期望的面试官风格，AI 会为您生成新的 System Prompt。这将完全覆盖当前已有的 Prompt。"
+        type="warning"
         showIcon
       />
 
@@ -621,8 +621,8 @@ ${paramConfig.features.doScoring ? '- 会进行评分' : ''}
   const renderPromptEdit = () => (
     <Space direction="vertical" style={{ width: '100%' }} size="large">
       <Alert
-        message="直接编辑 System Prompt"
-        description="完全控制 AI 面试官的行为。可用变量：{{jd_summary}}、{{resume_summary}}、{{knowledge_context}}"
+        message="直接编辑 System Prompt（最终生效）"
+        description="这是最终生效的 System Prompt，直接编辑即可生效。其他模式生成的 Prompt 最终也是保存到这里。可用变量：{{jd_summary}}、{{resume_summary}}、{{knowledge_context}}"
         type="warning"
         showIcon
       />

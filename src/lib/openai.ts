@@ -150,6 +150,8 @@ export async function analyzeJD(
     ? prompt 
     : `${prompt}\n\n重要：请以 JSON 格式输出结果。`;
 
+  console.log('📝 Final Prompt:', finalPrompt.substring(0, 500) + '...');
+
   const response = await openai.chat.completions.create({
     model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
     messages: [{ role: 'user', content: finalPrompt }],
@@ -158,8 +160,10 @@ export async function analyzeJD(
   });
 
   const content = response.choices[0].message.content || '{}';
+  console.log('🤖 AI Raw Response:', content);
   try {
     const result = JSON.parse(content);
+    console.log('📊 Parsed Result:', JSON.stringify(result, null, 2));
     return {
       summary: {
         jobOverview: result.summary?.jobOverview || '',

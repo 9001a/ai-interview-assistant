@@ -21,6 +21,7 @@ import {
   List,
   Popconfirm,
   Modal,
+  Descriptions,
 } from 'antd';
 import {
   ThunderboltOutlined,
@@ -34,6 +35,8 @@ import {
   DeleteOutlined,
   EditOutlined as EditIcon,
   CopyOutlined,
+  EyeOutlined,
+  CheckOutlined,
 } from '@ant-design/icons';
 import type { InterviewerConfig, InterviewerPreset } from '@/types';
 import { useInterviewStore } from '@/stores/interviewStore';
@@ -128,6 +131,85 @@ export function InterviewerConfigPanel() {
     setNewPresetDesc('');
   };
 
+  // 查看模板详情
+  const [viewingPreset, setViewingPreset] = useState<InterviewerPreset | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+
+  const handleViewPreset = (preset: InterviewerPreset) => {
+    setViewingPreset(preset);
+    setIsDetailModalOpen(true);
+  };
+
+  // 渲染模板详情
+  const renderPresetDetail = (preset: InterviewerPreset) => {
+    const cfg = preset.config;
+    return (
+      <Space direction="vertical" style={{ width: '100%' }} size="large">
+        {/* 基本信息 */}
+        <Card size="small" title="基本信息">
+          <Descriptions column={1} size="small">
+            <Descriptions.Item label="名称">{preset.name}</Descriptions.Item>
+            <Descriptions.Item label="描述">{preset.description || '无'}</Descriptions.Item>
+            <Descriptions.Item label="类型">
+              {preset.isBuiltIn ? <Tag color="blue">系统预设</Tag> : <Tag color="green">自定义</Tag>}
+            </Descriptions.Item>
+            <Descriptions.Item label="创建时间">
+              {new Date(preset.createdAt).toLocaleString('zh-CN')}
+            </Descriptions.Item>
+          </Descriptions>
+        </Card>
+
+        {/* 功能开关 */}
+        <Card size="small" title="功能配置">
+          <Space wrap>
+            <Tag color={cfg.features?.correctErrors ? 'green' : 'default'}>
+              {cfg.features?.correctErrors ? '✓' : '✗'} 纠正错误
+            </Tag>
+            <Tag color={cfg.features?.giveAnswers ? 'green' : 'default'}>
+              {cfg.features?.giveAnswers ? '✓' : '✗'} 给出答案
+            </Tag>
+            <Tag color={cfg.features?.askFollowUps ? 'green' : 'default'}>
+              {cfg.features?.askFollowUps ? '✓' : '✗'} 追问引导
+            </Tag>
+            <Tag color={cfg.features?.giveFeedback ? 'green' : 'default'}>
+              {cfg.features?.giveFeedback ? '✓' : '✗'} 给出评价
+            </Tag>
+            <Tag color={cfg.features?.doScoring ? 'green' : 'default'}>
+              {cfg.features?.doScoring ? '✓' : '✗'} 打分评估
+            </Tag>
+          </Space>
+        </Card>
+
+        {/* System Prompt 预览 */}
+        <Card
+          size="small"
+          title={
+            <Space>
+              <span>System Prompt</span>
+              <Tag color="purple">实际生效配置</Tag>
+            </Space>
+          }
+        >
+          <div
+            style={{
+              maxHeight: 300,
+              overflow: 'auto',
+              background: '#f5f5f5',
+              padding: 12,
+              borderRadius: 4,
+              fontSize: 13,
+              fontFamily: 'monospace',
+              whiteSpace: 'pre-wrap',
+              wordBreak: 'break-word',
+            }}
+          >
+            {cfg.systemPrompt || '无自定义 Prompt，将使用默认配置'}
+          </div>
+        </Card>
+      </Space>
+    );
+  };
+
   // 从参数生成 Prompt
   const generatePromptFromParams = () => {
     const style = strictness > 70 ? '严格' : strictness > 40 ? '专业' : '温和';
@@ -218,7 +300,32 @@ ${features.doScoring ? '- ✓ 会进行评分' : '- ✗ 不会评分'}
                 style={{
                   borderColor: activePresetId === preset.id ? '#1890ff' : undefined,
                 }}
-                onClick={() => loadPreset(preset.id)}
+                actions={[
+                  <Button
+                    key="view"
+                    type="link"
+                    size="small"
+                    icon={<EyeOutlined />}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleViewPreset(preset);
+                    }}
+                  >
+                    查看
+                  </Button>,
+                  <Button
+                    key="load"
+                    type="link"
+                    size="small"
+                    icon={<CheckOutlined />}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      loadPreset(preset.id);
+                    }}
+                  >
+                    加载
+                  </Button>,
+                ]}
               >
                 <div style={{ textAlign: 'center' }}>
                   <ThunderboltOutlined style={{ fontSize: 24, marginBottom: 8 }} />
@@ -257,6 +364,9 @@ ${features.doScoring ? '- ✓ 会进行评分' : '- ✗ 不会评分'}
             <List.Item
               key={preset.id}
               actions={[
+                <Button key="view" type="link" icon={<EyeOutlined />} onClick={() => handleViewPreset(preset)}>
+                  查看
+                </Button>,
                 <Button key="load" type="link" onClick={() => loadPreset(preset.id)}>
                   加载
                 </Button>,
@@ -310,6 +420,39 @@ ${features.doScoring ? '- ✓ 会进行评分' : '- ✗ 不会评分'}
             />
           </div>
         </Space>
+      </Modal>
+
+      {/* 模板详情弹窗 */}
+      <Modal
+        title={
+          <Space>
+            <EyeOutlined />
+            模板详情
+          </Space>
+        }
+        open={isDetailModalOpen}
+        onCancel={() => setIsDetailModalOpen(false)}
+        width={700}
+        footer={[
+          <Button key="close" onClick={() => setIsDetailModalOpen(false)}>
+            关闭
+          </Button>,
+          viewingPreset && (
+            <Button
+              key="load"
+              type="primary"
+              icon={<CheckOutlined />}
+              onClick={() => {
+                loadPreset(viewingPreset.id);
+                setIsDetailModalOpen(false);
+              }}
+            >
+              加载此模板
+            </Button>
+          ),
+        ]}
+      >
+        {viewingPreset && renderPresetDetail(viewingPreset)}
       </Modal>
     </div>
   );

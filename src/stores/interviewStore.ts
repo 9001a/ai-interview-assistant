@@ -35,15 +35,15 @@ interface InterviewState {
 }
 
 const defaultInterviewerConfig: InterviewerConfig = {
-  name: '专业型面试官',
-  type: 'professional',
-  style: '专业严谨',
-  tone: '正式',
-  expression: '专业且简洁',
-  questionStyle: '直接提问',
+  name: '友好型面试官',
+  type: 'friendly',
+  style: '温和引导',
+  tone: '温和',
+  expression: '鼓励式',
+  questionStyle: '逐步深入',
   features: {
     correctErrors: true,
-    giveAnswers: true,
+    giveAnswers: false,
     askFollowUps: true,
     giveFeedback: true,
     doScoring: false,
@@ -56,13 +56,28 @@ const defaultInterviewerConfig: InterviewerConfig = {
   },
 };
 
+// 从 localStorage 加载保存的配置
+const loadSavedConfig = (): InterviewerConfig => {
+  if (typeof window === 'undefined') return defaultInterviewerConfig;
+  try {
+    const saved = localStorage.getItem('interviewer_config');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      return { ...defaultInterviewerConfig, ...parsed };
+    }
+  } catch (e) {
+    console.error('Failed to load interviewer config:', e);
+  }
+  return defaultInterviewerConfig;
+};
+
 export const useInterviewStore = create<InterviewState>((set) => ({
   currentSession: null,
   messages: [],
   jdAnalysis: null,
   selectedResume: null,
   selectedKnowledgeBase: null,
-  interviewerConfig: defaultInterviewerConfig,
+  interviewerConfig: loadSavedConfig(),
   isStarted: false,
   isLoading: false,
   turnCount: 0,

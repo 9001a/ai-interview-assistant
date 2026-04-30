@@ -52,7 +52,7 @@ function buildJsonFieldsExample(dimensions: JDAnalyzerConfig['dimensions'], isEn
     jobOverview: isEnglish ? 'Job overview content...' : '岗位概述内容...',
     dailyWork: isEnglish ? 'Daily work content...' : '日常工作内容...',
     implicitRequirements: isEnglish ? 'Hidden requirements content...' : '隐含要求内容...',
-    developmentProspect: isEnglish ? 'Development prospects content...' : '发展前景内容...',
+    developmentProsspect: isEnglish ? 'Development prospects content...' : '发展前景内容...',
     companyBackground: isEnglish ? 'Company background content...' : '公司背景内容...',
     salaryAnalysis: isEnglish ? 'Salary analysis content...' : '薪资分析内容...',
     interviewFocus: isEnglish ? 'Interview focus content...' : '面试重点内容...',
@@ -64,6 +64,24 @@ function buildJsonFieldsExample(dimensions: JDAnalyzerConfig['dimensions'], isEn
     .join(',\n');
 
   return fields;
+}
+
+// 构建JSON输出格式模板（用于强制统一输出格式）
+function buildJsonOutputFormat(dimensions: JDAnalyzerConfig['dimensions']): string {
+  const summaryFields: string[] = [];
+
+  if (dimensions.jobOverview) summaryFields.push('    "jobOverview": "岗位概述内容..."');
+  if (dimensions.dailyWork) summaryFields.push('    "dailyWork": "日常工作内容..."');
+  if (dimensions.implicitRequirements) summaryFields.push('    "implicitRequirements": "隐含要求内容..."');
+  if (dimensions.developmentProspect) summaryFields.push('    "developmentProspect": "发展前景内容..."');
+  if (dimensions.companyBackground) summaryFields.push('    "companyBackground": "公司背景内容..."');
+  if (dimensions.salaryAnalysis) summaryFields.push('    "salaryAnalysis": "薪资分析内容..."');
+  if (dimensions.interviewFocus) summaryFields.push('    "interviewFocus": "面试重点内容..."');
+
+  const summarySection = summaryFields.length > 0 ? `  "summary": {\n${summaryFields.join(',\n')}\n  }` : '';
+  const tagsSection = dimensions.skillTags ? ',\n  "skillTags": ["技能标签1", "技能标签2", "技能标签3"]' : '';
+
+  return `{\n${summarySection}${tagsSection}\n}`;
 }
 
 // 构建默认的分析 Prompt
@@ -145,16 +163,15 @@ export async function analyzeJD(
     prompt = basePrompt.replace('{{jd_text}}', jdText);
   }
 
-  // 确保 prompt 中包含 "json" 关键词（API 要求使用 json_object 格式时必须有这个词）
-  const finalPrompt = prompt.toLowerCase().includes('json') 
-    ? prompt 
-    : `${prompt}\n\n重要：请以 JSON 格式输出结果。`;
+  // 强制添加统一的 JSON 格式要求（确保返回格式一致）
+  const jsonFormatExample = buildJsonOutputFormat(analyzerConfig.dimensions);
+  prompt += `\n\n【重要】你必须严格按照以下 JSON 格式输出，不要添加任何其他内容：\n${jsonFormatExample}`;
 
-  console.log('📝 Final Prompt:', finalPrompt.substring(0, 500) + '...');
+  console.log('📝 Final Prompt:', prompt.substring(0, 500) + '...');
 
   const response = await openai.chat.completions.create({
     model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
-    messages: [{ role: 'user', content: finalPrompt }],
+    messages: [{ role: 'user', content: prompt }],
     temperature: 0.7,
     response_format: { type: 'json_object' },
   });

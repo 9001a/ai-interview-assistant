@@ -15,7 +15,15 @@ import {
   Space,
   message,
 } from 'antd';
-import { FileTextOutlined, CheckCircleOutlined, ThunderboltOutlined, RocketOutlined } from '@ant-design/icons';
+import {
+  FileTextOutlined,
+  CheckCircleOutlined,
+  ThunderboltOutlined,
+  RocketOutlined,
+  BuildOutlined,
+  DollarOutlined,
+  QuestionCircleOutlined,
+} from '@ant-design/icons';
 import { useInterviewStore } from '@/stores/interviewStore';
 import { useAuthStore } from '@/stores/authStore';
 import { useJDStore } from '@/stores/jdStore';
@@ -36,18 +44,18 @@ const JD_TAB_ITEMS = [
     ),
   },
   {
-    key: 'requirements',
-    label: (
-      <span>
-        <CheckCircleOutlined /> 隐含要求
-      </span>
-    ),
-  },
-  {
     key: 'daily',
     label: (
       <span>
         <ThunderboltOutlined /> 日常工作
+      </span>
+    ),
+  },
+  {
+    key: 'requirements',
+    label: (
+      <span>
+        <CheckCircleOutlined /> 隐含要求
       </span>
     ),
   },
@@ -59,7 +67,31 @@ const JD_TAB_ITEMS = [
       </span>
     ),
   },
-];
+  {
+    key: 'company',
+    label: (
+      <span>
+        <BuildOutlined /> 公司背景
+      </span>
+    ),
+  },
+  {
+    key: 'salary',
+    label: (
+      <span>
+        <DollarOutlined /> 薪资分析
+      </span>
+    ),
+  },
+  {
+    key: 'interview',
+    label: (
+      <span>
+        <QuestionCircleOutlined /> 面试重点
+      </span>
+    ),
+  },
+];  // 技能标签用单独的 Tag 组件显示，不在 Tab 中展示
 
 export default function JDPage() {
   const [loading, setLoading] = useState(false);
@@ -194,9 +226,12 @@ export default function JDPage() {
                     <div className="p-4 bg-[#FFFBF5] rounded-lg min-h-[200px]">
                       <div className="whitespace-pre-wrap leading-relaxed text-gray-700">
                         {item.key === 'overview' && analysis.jobOverview}
-                        {item.key === 'requirements' && analysis.implicitRequirements}
                         {item.key === 'daily' && analysis.dailyWork}
+                        {item.key === 'requirements' && analysis.implicitRequirements}
                         {item.key === 'prospects' && analysis.developmentProspect}
+                        {item.key === 'company' && analysis.companyBackground}
+                        {item.key === 'salary' && analysis.salaryAnalysis}
+                        {item.key === 'interview' && analysis.interviewFocus}
                       </div>
                     </div>
                   ),

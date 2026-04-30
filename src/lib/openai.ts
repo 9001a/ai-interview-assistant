@@ -46,6 +46,26 @@ function buildDimensionsPrompt(dimensions: JDAnalyzerConfig['dimensions']): stri
   return enabled.join('\n');
 }
 
+// 根据启用的维度构建JSON字段示例
+function buildJsonFieldsExample(dimensions: JDAnalyzerConfig['dimensions'], isEnglish: boolean): string {
+  const examples: Record<string, string> = {
+    jobOverview: isEnglish ? 'Job overview content...' : '岗位概述内容...',
+    dailyWork: isEnglish ? 'Daily work content...' : '日常工作内容...',
+    implicitRequirements: isEnglish ? 'Hidden requirements content...' : '隐含要求内容...',
+    developmentProspect: isEnglish ? 'Development prospects content...' : '发展前景内容...',
+    companyBackground: isEnglish ? 'Company background content...' : '公司背景内容...',
+    salaryAnalysis: isEnglish ? 'Salary analysis content...' : '薪资分析内容...',
+    interviewFocus: isEnglish ? 'Interview focus content...' : '面试重点内容...',
+  };
+
+  const fields = Object.entries(dimensions)
+    .filter(([key, value]) => value && key !== 'skillTags')
+    .map(([key]) => `    "${key}": "${examples[key]}"`)
+    .join(',\n');
+
+  return fields;
+}
+
 // 构建默认的分析 Prompt
 function buildDefaultAnalyzePrompt(config: JDAnalyzerConfig): string {
   const dimensionsText = buildDimensionsPrompt(config.dimensions);
@@ -59,7 +79,9 @@ function buildDefaultAnalyzePrompt(config: JDAnalyzerConfig): string {
     en: '英文',
   };
   const isEnglish = config.language === 'en';
-  
+  const jsonFields = buildJsonFieldsExample(config.dimensions, isEnglish);
+  const includeTags = config.dimensions.skillTags;
+
   return `你是一位专业的JD分析专家。请基于以下目标JD内容，结合行业通用标准，客观、全面地完成分析。
 
 分析维度：
@@ -70,7 +92,7 @@ ${dimensionsText}
 - 语言${styleMap[config.style]}，同时兼顾易懂性
 - 使用${languageMap[config.language]}输出所有分析内容
 - 不堆砌JD原文，用自己的语言提炼总结
-- 提取${config.tagCount}个核心技能标签
+${includeTags ? `- 提取${config.tagCount}个核心技能标签` : ''}
 - 严格按以下JSON格式输出
 
 目标JD：
@@ -79,12 +101,9 @@ ${dimensionsText}
 请按以下格式输出JSON（不要其他内容）：
 {
   "summary": {
-    "overview": "${isEnglish ? 'Job overview content...' : '岗位概述内容...'}",
-    "hiddenRequirements": "${isEnglish ? 'Hidden requirements content...' : '隐含要求内容...'}",
-    "dailyWork": "${isEnglish ? 'Daily work content...' : '日常工作内容...'}",
-    "prospects": "${isEnglish ? 'Development prospects content...' : '发展前景内容...'}"
-  },
-  "tags": ["${isEnglish ? 'skill tag 1' : '技能标签1'}", "${isEnglish ? 'skill tag 2' : '技能标签2'}", "${isEnglish ? 'skill tag 3' : '技能标签3'}"]
+${jsonFields}
+  }${includeTags ? `,
+  "skillTags": ["${isEnglish ? 'skill tag 1' : '技能标签1'}", "${isEnglish ? 'skill tag 2' : '技能标签2'}"]` : ''}
 }`;
 }
 

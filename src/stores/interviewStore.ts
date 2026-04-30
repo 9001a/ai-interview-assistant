@@ -137,7 +137,16 @@ const loadSavedJDAnalyzerConfig = (): JDAnalyzerConfig => {
   try {
     const saved = localStorage.getItem('jd_analyzer_config');
     if (saved) {
-      return { ...defaultJDAnalyzerConfig, ...JSON.parse(saved) };
+      const parsed = JSON.parse(saved);
+      // 深度合并 dimensions，确保新维度不会被旧配置覆盖丢失
+      return {
+        ...defaultJDAnalyzerConfig,
+        ...parsed,
+        dimensions: {
+          ...defaultJDAnalyzerConfig.dimensions,
+          ...(parsed.dimensions || {}),
+        },
+      };
     }
   } catch (e) {
     console.error('Failed to load JD analyzer config:', e);

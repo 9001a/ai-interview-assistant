@@ -365,9 +365,14 @@ ${enabledDimensions.map((d) => `**${d.label}**：\n[分析内容]\n`).join('\n')
           </div>
 
           <div>
-            <Text strong>语言</Text>
+            <Text strong>输出语言</Text>
+            <div style={{ marginTop: 4, marginBottom: 4 }}>
+              <Text type="secondary" style={{ fontSize: 12 }}>
+                选择分析结果的输出语言
+              </Text>
+            </div>
             <Select
-              style={{ width: '100%', marginTop: 8 }}
+              style={{ width: '100%' }}
               value={jdAnalyzerConfig.language}
               onChange={(value) => setJDAnalyzerConfig({ language: value })}
               options={[

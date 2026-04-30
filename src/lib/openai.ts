@@ -51,6 +51,11 @@ function buildDefaultAnalyzePrompt(config: JDAnalyzerConfig): string {
     concise: '简洁、凝练',
     professional: '专业、严谨',
   };
+  const languageMap = {
+    zh: '中文',
+    en: '英文',
+  };
+  const isEnglish = config.language === 'en';
   
   return `你是一位专业的JD分析专家。请基于以下目标JD内容，结合行业通用标准，客观、全面地完成分析。
 
@@ -60,6 +65,7 @@ ${dimensionsText}
 分析要求：
 - 全程贴合JD原文，不添加无关内容、不主观臆断
 - 语言${styleMap[config.style]}，同时兼顾易懂性
+- 使用${languageMap[config.language]}输出所有分析内容
 - 不堆砌JD原文，用自己的语言提炼总结
 - 提取${config.tagCount}个核心技能标签
 - 严格按以下JSON格式输出
@@ -70,12 +76,12 @@ ${dimensionsText}
 请按以下格式输出JSON（不要其他内容）：
 {
   "summary": {
-    "overview": "岗位概述内容...",
-    "hiddenRequirements": "隐含要求内容...",
-    "dailyWork": "日常工作内容...",
-    "prospects": "发展前景内容..."
+    "overview": "${isEnglish ? 'Job overview content...' : '岗位概述内容...'}",
+    "hiddenRequirements": "${isEnglish ? 'Hidden requirements content...' : '隐含要求内容...'}",
+    "dailyWork": "${isEnglish ? 'Daily work content...' : '日常工作内容...'}",
+    "prospects": "${isEnglish ? 'Development prospects content...' : '发展前景内容...'}"
   },
-  "tags": ["技能标签1", "技能标签2", "技能标签3"]
+  "tags": ["${isEnglish ? 'skill tag 1' : '技能标签1'}", "${isEnglish ? 'skill tag 2' : '技能标签2'}", "${isEnglish ? 'skill tag 3' : '技能标签3'}"]
 }`;
 }
 

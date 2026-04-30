@@ -19,7 +19,7 @@ export interface JDAnalysisResult {
   tags: string[];
 }
 
-// 分析维度映射
+// 分析维度映射（与 JDAnalyzerConfig 中的 key 保持一致）
 const DIMENSION_MAP: Record<string, { name: string; desc: string }> = {
   jobOverview: { name: '岗位概述', desc: '结合JD的岗位职责、定位，说明核心定位、本质工作内容、核心工作价值' },
   dailyWork: { name: '日常工作', desc: '基于JD的岗位职责板块，拆解日常工作内容' },

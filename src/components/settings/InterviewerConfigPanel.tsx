@@ -18,6 +18,9 @@ import {
   Col,
   Divider,
   message,
+  List,
+  Popconfirm,
+  Modal,
 } from 'antd';
 import {
   ThunderboltOutlined,
@@ -27,14 +30,19 @@ import {
   SaveOutlined,
   ReloadOutlined,
   InfoCircleOutlined,
+  PlusOutlined,
+  DeleteOutlined,
+  EditOutlined as EditIcon,
+  CopyOutlined,
 } from '@ant-design/icons';
-import type { InterviewerConfig } from '@/types';
+import type { InterviewerConfig, InterviewerPreset } from '@/types';
+import { useInterviewStore } from '@/stores/interviewStore';
 
 const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
 
-// 预设模板
-const PRESET_TEMPLATES: Array<{
+// 系统预设模板（用于快速选择）
+const QUICK_TEMPLATES: Array<{
   key: string;
   name: string;
   description: string;
@@ -81,20 +89,21 @@ const PRESET_TEMPLATES: Array<{
 面试材料：
 - JD: {{jd_summary}}
 - 简历: {{resume_summary}}
+{{knowledge_context}}
 
-请先让候选人进行自我介绍，然后根据简历内容提出第一个技术问题。`,
+现在开始面试吧！先让候选人自我介绍。`,
   },
   {
     key: 'friendly',
     name: '友好型',
-    description: '温和引导，逐步深入，注重沟通',
+    description: '温和友善，引导思考，关注思维过程',
     icon: <MessageOutlined />,
     config: {
       type: 'friendly',
-      style: '温和引导',
-      tone: '温和',
-      expression: '鼓励式',
-      questionStyle: '逐步深入',
+      style: '温和友善',
+      tone: '友好',
+      expression: '温和且鼓励',
+      questionStyle: '引导式提问',
       features: {
         correctErrors: true,
         giveAnswers: false,
@@ -103,38 +112,37 @@ const PRESET_TEMPLATES: Array<{
         doScoring: false,
       },
     },
-    systemPrompt: `你是一个温和友好的面试官，像一个耐心的导师，善于引导候选人展现最好的自己。
+    systemPrompt: `你是一位温和友善的面试官，像一个耐心的导师。
 
 面试风格：
 - 对候选人比较耐心，会引导思考
-- 在关键问题上要求逻辑严密但不咄咄逼人
+- 在关键问题上要求逻辑严密
 - 语气温和但专业
 
 提问策略：
 - 使用"你为什么这么想？"来引导，而不是直接否定
 - 关注候选人的思维过程，而不仅仅是答案
-- 给候选人充分的表达空间
 
 纠错方式：
 - 温和地指出错误："这个思路有些问题，我们可以这样思考..."
-- 通过提问引导候选人自己发现正确答案
-- 肯定正确的部分，再指出改进空间
+- 给出正确答案和解释
 
 面试材料：
 - JD: {{jd_summary}}
 - 简历: {{resume_summary}}
+{{knowledge_context}}
 
-请先让候选人进行自我介绍，营造轻松的面试氛围。`,
+现在开始面试吧！先让候选人自我介绍。`,
   },
   {
     key: 'stress',
     name: '压力型',
-    description: '多轮追问，考察抗压，快速反应',
-    icon: <ThunderboltOutlined style={{ color: '#ff4d4f' }} />,
+    description: '快速追问，考察抗压和应变能力',
+    icon: <ThunderboltOutlined />,
     config: {
       type: 'stress',
-      style: '压力测试',
-      tone: '尖锐',
+      style: '快节奏追问',
+      tone: '严肃',
       expression: '挑战性',
       questionStyle: '连续追问',
       features: {
@@ -145,583 +153,623 @@ const PRESET_TEMPLATES: Array<{
         doScoring: true,
       },
     },
-    systemPrompt: `你是一个严格的压力面试官，通过连续追问和尖锐问题来考察候选人的抗压能力和临场反应。
+    systemPrompt: `你是一位压力型面试官，通过快节奏的追问来考察候选人的抗压能力。
 
 面试风格：
-- 快速切换话题，不给候选人太多思考时间
-- 对答案中的漏洞会立即追问
-- 态度严肃，营造紧张的面试氛围
+- 语速快，问题密集
+- 对模糊回答会立即追问细节
+- 态度严肃，不苟言笑
 
 提问策略：
-- 针对简历中的每个项目深挖细节
-- 如果候选人回答模糊，立即打断追问
-- 故意提出挑战性问题，观察候选人反应
+- 不给你太多思考时间
+- 一个问题接一个问题
+- 故意打断，考验应变能力
 
 纠错方式：
-- 直接指出错误，不给予安慰
-- 追问"你确定吗？"来施加压力
-- 记录错误但不立即纠正，继续施压
+- 直接指出："不对，这个答案有问题"
+- 不给解释，继续下一个问题
 
 面试材料：
 - JD: {{jd_summary}}
 - 简历: {{resume_summary}}
+{{knowledge_context}}
 
-请直接开始提问，不做过多的寒暄。`,
+现在开始面试吧！简单自我介绍，1分钟。`,
   },
 ];
 
-// 默认 System Prompt 模板
-const DEFAULT_SYSTEM_PROMPT = `你是一个专业的面试官，负责评估候选人是否适合目标职位。
+// 默认配置
+const defaultConfig: InterviewerConfig = {
+  name: '自定义面试官',
+  type: 'custom',
+  style: '',
+  tone: '',
+  expression: '',
+  questionStyle: '',
+  features: {
+    correctErrors: true,
+    giveAnswers: false,
+    askFollowUps: true,
+    giveFeedback: true,
+    doScoring: false,
+  },
+  focusAreas: {
+    technical: true,
+    project: true,
+    softSkills: true,
+    career: false,
+  },
+};
 
-面试风格：{{style}}
-语气：{{tone}}
-表达方式：{{expression}}
-提问风格：{{questionStyle}}
+export function InterviewerConfigPanel() {
+  const {
+    interviewerConfig,
+    setInterviewerConfig,
+    presets,
+    activePresetId,
+    addPreset,
+    deletePreset,
+    loadPreset,
+  } = useInterviewStore();
 
-功能配置：
-- 纠错：{{correctErrors}}
-- 给出答案：{{giveAnswers}}
-- 追问：{{askFollowUps}}
-- 反馈：{{giveFeedback}}
-- 评分：{{doScoring}}
+  // 用户自定义模板
+  const userPresets = presets.filter((p: InterviewerPreset) => !p.isBuiltIn);
 
-面试材料：
-- JD: {{jd_summary}}
-- 简历: {{resume_summary}}
-{{#if knowledge_context}}
-- 参考知识：{{knowledge_context}}
-{{/if}}
+  const [activeTab, setActiveTab] = useState('presets');
+  const [quickTemplate, setQuickTemplate] = useState<string | null>(null);
+  const [customPrompt, setCustomPrompt] = useState(interviewerConfig.systemPrompt || '');
+  const [customDescription, setCustomDescription] = useState('');
+  const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
+  const [newPresetName, setNewPresetName] = useState('');
+  const [newPresetDesc, setNewPresetDesc] = useState('');
 
-请根据以上信息开始面试。首先让候选人进行自我介绍。`;
+  // 参数调整相关状态
+  const [strictness, setStrictness] = useState(50);
+  const [patience, setPatience] = useState(70);
+  const [technicalDepth, setTechnicalDepth] = useState(80);
+  const [features, setFeatures] = useState(interviewerConfig.features);
 
-interface InterviewerConfigPanelProps {
-  initialConfig?: InterviewerConfig;
-  onSave?: (config: InterviewerConfig) => void;
-}
-
-export default function InterviewerConfigPanel({
-  initialConfig,
-  onSave,
-}: InterviewerConfigPanelProps) {
-  const [activeTab, setActiveTab] = useState('quick');
-  const [selectedPreset, setSelectedPreset] = useState('friendly');
-  const [systemPrompt, setSystemPrompt] = useState(PRESET_TEMPLATES[1].systemPrompt);
-  const [freeDescription, setFreeDescription] = useState('');
-  const [generatedPrompt, setGeneratedPrompt] = useState('');
-  const [isGenerating, setIsGenerating] = useState(false);
-
-  // 参数调整状态
-  const [paramConfig, setParamConfig] = useState({
-    style: '温和引导',
-    tone: '温和',
-    expression: '鼓励式',
-    questionStyle: '逐步深入',
-    strictness: 50,
-    patience: 80,
-    technicalDepth: 60,
-    features: {
-      correctErrors: true,
-      giveAnswers: false,
-      askFollowUps: true,
-      giveFeedback: true,
-      doScoring: false,
-    },
-  });
-
-  // 当初始配置变化时更新
   useEffect(() => {
-    if (initialConfig?.systemPrompt) {
-      setSystemPrompt(initialConfig.systemPrompt);
-    }
-  }, [initialConfig]);
+    setCustomPrompt(interviewerConfig.systemPrompt || '');
+    setFeatures(interviewerConfig.features);
+  }, [interviewerConfig]);
 
-  // 快速选择 - 应用预设
-  const handlePresetSelect = (key: string) => {
-    setSelectedPreset(key);
-    const preset = PRESET_TEMPLATES.find((p) => p.key === key);
-    if (preset) {
-      setSystemPrompt(preset.systemPrompt);
-      message.success(`已选择「${preset.name}」模板`);
+  // 保存配置到 localStorage
+  const saveConfig = (config: InterviewerConfig) => {
+    setInterviewerConfig(config);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('interviewer_config', JSON.stringify(config));
     }
+    message.success('配置已保存');
   };
 
-  // 参数调整 - 生成 Prompt
-  const generatePromptFromParams = () => {
-    const prompt = `你是一个${paramConfig.style}的面试官。
-
-面试风格：
-- 语气${paramConfig.tone}，表达方式${paramConfig.expression}
-- 提问风格：${paramConfig.questionStyle}
-- 严格程度：${paramConfig.strictness}%
-- 耐心程度：${paramConfig.patience}%
-- 技术深度：${paramConfig.technicalDepth}%
-
-功能配置：
-${paramConfig.features.correctErrors ? '- 会纠正候选人的错误' : ''}
-${paramConfig.features.giveAnswers ? '- 会直接给出正确答案' : '- 引导候选人自己思考答案'}
-${paramConfig.features.askFollowUps ? '- 会进行追问' : ''}
-${paramConfig.features.giveFeedback ? '- 会给出反馈' : ''}
-${paramConfig.features.doScoring ? '- 会进行评分' : ''}
-
-面试材料：
-- JD: {{jd_summary}}
-- 简历: {{resume_summary}}
-
-请开始面试。`;
-
-    setSystemPrompt(prompt);
-    message.success('已根据参数生成 Prompt');
-  };
-
-  // 自由描述 - AI 生成 Prompt
-  const handleGenerateFromDescription = async () => {
-    if (!freeDescription.trim()) {
-      message.warning('请先描述您期望的面试官风格');
+  // 保存为新模板
+  const handleSaveAsPreset = () => {
+    if (!newPresetName.trim()) {
+      message.error('请输入模板名称');
       return;
     }
 
-    setIsGenerating(true);
-    // 模拟 AI 生成（实际应该调用 API）
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    const newPreset: Omit<InterviewerPreset, 'id' | 'createdAt' | 'updatedAt'> = {
+      name: newPresetName,
+      description: newPresetDesc || '用户自定义模板',
+      config: { ...interviewerConfig, systemPrompt: customPrompt },
+      isBuiltIn: false,
+    };
 
-    const generated = `你是一个根据以下描述定制的面试官：
+    addPreset(newPreset);
+    message.success('模板已保存');
+    setIsSaveModalOpen(false);
+    setNewPresetName('');
+    setNewPresetDesc('');
+  };
 
-用户期望：${freeDescription}
+  // 从参数生成 Prompt
+  const generatePromptFromParams = () => {
+    const style = strictness > 70 ? '严格' : strictness > 40 ? '专业' : '温和';
+    const tone = patience > 70 ? '耐心引导' : patience > 40 ? '正常' : '快节奏';
+    const depth = technicalDepth > 70 ? '深入' : technicalDepth > 40 ? '适中' : '基础';
 
-基于以上描述，我将以以下风格进行面试：
-- 关注候选人的思维过程
-- 提出有深度的问题
-- 给予建设性的反馈
+    const prompt = `你是一位${style}的面试官，面试风格${tone}，技术考察深度为${depth}。
+
+面试风格：
+- ${strictness > 70 ? '对技术要求严格，会直接指出问题' : strictness > 40 ? '注重技术准确性' : '温和友善，耐心引导'}
+- ${patience > 70 ? '会给候选人充分的时间思考和回答' : patience > 40 ? '正常节奏，适当等待' : '节奏较快，需要快速回答'}
+- ${technicalDepth > 70 ? '会深入追问技术细节和原理' : technicalDepth > 40 ? '关注核心概念和实现' : '主要考察基础知识'}
+
+功能设置：
+${features.correctErrors ? '- ✓ 会纠正候选人的错误' : '- ✗ 不会主动纠正错误'}
+${features.giveAnswers ? '- ✓ 候选人说不出时会提供参考答案' : '- ✗ 不会直接给出答案'}
+${features.askFollowUps ? '- ✓ 会根据回答进行追问' : '- ✗ 不会追问细节'}
+${features.giveFeedback ? '- ✓ 会给出评价和建议' : '- ✗ 不会给出详细反馈'}
+${features.doScoring ? '- ✓ 会进行评分' : '- ✗ 不会评分'}
 
 面试材料：
 - JD: {{jd_summary}}
 - 简历: {{resume_summary}}
+{{knowledge_context}}
 
-请开始面试。`;
+现在开始面试吧！`;
 
-    setGeneratedPrompt(generated);
-    setSystemPrompt(generated);
-    setIsGenerating(false);
-    message.success('Prompt 生成成功');
+    setCustomPrompt(prompt);
+    saveConfig({ ...interviewerConfig, systemPrompt: prompt, features });
+    message.success('Prompt 已生成并保存');
   };
 
-  // 保存配置
-  const handleSave = () => {
-    const config: InterviewerConfig = {
-      name: PRESET_TEMPLATES.find((p) => p.key === selectedPreset)?.name || '自定义面试官',
-      type: selectedPreset as InterviewerConfig['type'],
-      style: paramConfig.style,
-      tone: paramConfig.tone,
-      expression: paramConfig.expression,
-      questionStyle: paramConfig.questionStyle,
-      features: paramConfig.features,
-      focusAreas: {
-        technical: true,
-        project: true,
-        softSkills: true,
-        career: false,
-      },
-      customDescription: freeDescription,
-      systemPrompt: systemPrompt,
-    };
+  // 从自由描述生成 Prompt
+  const generatePromptFromDescription = async () => {
+    if (!customDescription.trim()) {
+      message.error('请先描述您期望的面试官风格');
+      return;
+    }
 
-    onSave?.(config);
-    message.success('面试官配置已保存');
+    message.loading('正在生成 Prompt...', 0);
+
+    try {
+      // 这里可以调用 AI API 来生成 Prompt
+      // 暂时用简单的方式生成
+      const prompt = `你是一位面试官，${customDescription}。
+
+面试风格：
+- 根据候选人的回答灵活调整
+- 关注候选人的专业能力和潜力
+- 保持专业和尊重
+
+面试材料：
+- JD: {{jd_summary}}
+- 简历: {{resume_summary}}
+{{knowledge_context}}
+
+现在开始面试吧！`;
+
+      setCustomPrompt(prompt);
+      saveConfig({ ...interviewerConfig, systemPrompt: prompt });
+      message.destroy();
+      message.success('Prompt 已生成');
+    } catch {
+      message.destroy();
+      message.error('生成失败，请稍后重试');
+    }
   };
 
-  // 恢复默认
-  const handleReset = () => {
-    setSelectedPreset('friendly');
-    setSystemPrompt(PRESET_TEMPLATES[1].systemPrompt);
-    setActiveTab('quick');
-    message.success('已恢复默认配置');
+  // 加载预设模板
+  const loadQuickTemplate = (template: typeof QUICK_TEMPLATES[0]) => {
+    setQuickTemplate(template.key);
+    setCustomPrompt(template.systemPrompt);
+    saveConfig({ ...interviewerConfig, ...template.config, systemPrompt: template.systemPrompt });
+    message.success(`已加载 ${template.name} 模板`);
   };
 
-  // 渲染快速选择模式
-  const renderQuickSelect = () => (
-    <Space direction="vertical" style={{ width: '100%' }} size="large">
+  // 渲染预设模板列表
+  const renderPresetsTab = () => (
+    <div style={{ padding: '16px 0' }}>
       <Alert
-        message="选择预设模板"
-        description="使用系统预设的面试官风格。点击后会直接应用该模板的 System Prompt。"
+        message="配置模板库"
+        description="选择一个预设模板作为基础，然后可以在其他标签页中进一步自定义。您也可以将当前配置保存为新模板供以后使用。"
         type="info"
         showIcon
+        style={{ marginBottom: 16 }}
       />
+
+      <Title level={5}>系统预设</Title>
+      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+        {presets
+          .filter((p) => p.isBuiltIn)
+          .map((preset) => (
+            <Col span={8} key={preset.id}>
+              <Card
+                hoverable
+                style={{
+                  borderColor: activePresetId === preset.id ? '#1890ff' : undefined,
+                }}
+                onClick={() => loadPreset(preset.id)}
+              >
+                <div style={{ textAlign: 'center' }}>
+                  <ThunderboltOutlined style={{ fontSize: 24, marginBottom: 8 }} />
+                  <div style={{ fontWeight: 'bold' }}>{preset.name}</div>
+                  <Text type="secondary" style={{ fontSize: 12 }}>
+                    {preset.description}
+                  </Text>
+                </div>
+              </Card>
+            </Col>
+          ))}
+      </Row>
+
+      <Divider />
+
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Title level={5} style={{ margin: 0 }}>我的模板</Title>
+        <Button
+          type="primary"
+          icon={<PlusOutlined />}
+          onClick={() => setIsSaveModalOpen(true)}
+        >
+          保存当前配置为新模板
+        </Button>
+      </div>
+
+      {userPresets.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '40px 0', color: '#999' }}>
+          暂无自定义模板，配置好面试官后点击上方按钮保存
+        </div>
+      ) : (
+        <List<InterviewerPreset>
+          style={{ marginTop: 16 }}
+          dataSource={userPresets}
+          renderItem={(preset: InterviewerPreset) => (
+            <List.Item
+              key={preset.id}
+              actions={[
+                <Button key="load" type="link" onClick={() => loadPreset(preset.id)}>
+                  加载
+                </Button>,
+                <Popconfirm
+                  key="delete"
+                  title="确定删除这个模板吗？"
+                  onConfirm={() => deletePreset(preset.id)}
+                >
+                  <Button type="link" danger>
+                    删除
+                  </Button>
+                </Popconfirm>,
+              ]}
+            >
+              <List.Item.Meta
+                title={
+                  <Space>
+                    {preset.name}
+                    {activePresetId === preset.id && <Tag color="blue">当前使用</Tag>}
+                  </Space>
+                }
+                description={preset.description}
+              />
+            </List.Item>
+          )}
+        />
+      )}
+
+      <Modal
+        title="保存为新模板"
+        open={isSaveModalOpen}
+        onOk={handleSaveAsPreset}
+        onCancel={() => setIsSaveModalOpen(false)}
+      >
+        <Space direction="vertical" style={{ width: '100%' }}>
+          <div>
+            <Text>模板名称</Text>
+            <Input
+              placeholder="例如：销售岗位面试官"
+              value={newPresetName}
+              onChange={(e) => setNewPresetName(e.target.value)}
+            />
+          </div>
+          <div>
+            <Text>描述（可选）</Text>
+            <Input.TextArea
+              placeholder="描述这个模板适合的场景"
+              value={newPresetDesc}
+              onChange={(e) => setNewPresetDesc(e.target.value)}
+              rows={3}
+            />
+          </div>
+        </Space>
+      </Modal>
+    </div>
+  );
+
+  // 渲染快速选择 Tab
+  const renderQuickSelectTab = () => (
+    <div style={{ padding: '16px 0' }}>
+      <Alert
+        message="使用预设模板"
+        description="点击下方卡片直接加载预设模板，这会覆盖当前的 Prompt 配置。如果需要保留当前配置，请先保存为模板。"
+        type="info"
+        showIcon
+        style={{ marginBottom: 24 }}
+      />
+
       <Row gutter={[16, 16]}>
-        {PRESET_TEMPLATES.map((template) => (
+        {QUICK_TEMPLATES.map((template) => (
           <Col span={8} key={template.key}>
             <Card
               hoverable
-              onClick={() => handlePresetSelect(template.key)}
               style={{
-                borderColor: selectedPreset === template.key ? '#F5A623' : undefined,
-                backgroundColor: selectedPreset === template.key ? '#FFF8E7' : undefined,
+                borderColor: quickTemplate === template.key ? '#1890ff' : undefined,
               }}
+              onClick={() => loadQuickTemplate(template)}
             >
-              <Space direction="vertical" align="center" style={{ width: '100%' }}>
-                <div style={{ fontSize: 24 }}>{template.icon}</div>
-                <Text strong>{template.name}</Text>
-                <Text type="secondary" style={{ fontSize: 12, textAlign: 'center' }}>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: 32, marginBottom: 12, color: '#1890ff' }}>
+                  {template.icon}
+                </div>
+                <Title level={5} style={{ margin: '0 0 8px' }}>
+                  {template.name}
+                </Title>
+                <Paragraph type="secondary" style={{ fontSize: 12, margin: 0 }}>
                   {template.description}
-                </Text>
-              </Space>
+                </Paragraph>
+              </div>
             </Card>
           </Col>
         ))}
       </Row>
-
-      {selectedPreset && (
-        <Card
-          title="当前 Prompt 预览"
-          size="small"
-          style={{ backgroundColor: '#fafafa' }}
-        >
-          <pre
-            style={{
-              margin: 0,
-              whiteSpace: 'pre-wrap',
-              fontSize: 13,
-              maxHeight: 200,
-              overflow: 'auto',
-            }}
-          >
-            {systemPrompt}
-          </pre>
-        </Card>
-      )}
-    </Space>
+    </div>
   );
 
-  // 渲染参数调整模式
-  const renderParamAdjust = () => (
-    <Space direction="vertical" style={{ width: '100%' }} size="large">
+  // 渲染参数调整 Tab
+  const renderParamsTab = () => (
+    <div style={{ padding: '16px 0' }}>
       <Alert
-        message="调整参数生成 Prompt"
-        description="通过参数调整面试官行为，点击「生成 Prompt」后会根据这些参数生成新的 System Prompt。这将覆盖当前已有的 Prompt。"
+        message="通过参数调整面试官行为，点击「生成 Prompt」后会根据这些参数生成新的 System Prompt。这将覆盖当前已有的 Prompt。"
         type="info"
         showIcon
+        style={{ marginBottom: 24 }}
       />
 
-      <Card title="基础风格" size="small">
-        <Row gutter={[16, 16]}>
-          <Col span={12}>
-            <Text>面试风格</Text>
-            <Input
-              value={paramConfig.style}
-              onChange={(e) =>
-                setParamConfig({ ...paramConfig, style: e.target.value })
-              }
-              style={{ marginTop: 8 }}
-              placeholder="如：温和引导、专业严谨"
-            />
-          </Col>
-          <Col span={12}>
-            <Text>语气</Text>
-            <Input
-              value={paramConfig.tone}
-              onChange={(e) =>
-                setParamConfig({ ...paramConfig, tone: e.target.value })
-              }
-              style={{ marginTop: 8 }}
-              placeholder="如：温和、正式"
-            />
-          </Col>
-          <Col span={12}>
-            <Text>表达方式</Text>
-            <Input
-              value={paramConfig.expression}
-              onChange={(e) =>
-                setParamConfig({ ...paramConfig, expression: e.target.value })
-              }
-              style={{ marginTop: 8 }}
-              placeholder="如：鼓励式、专业且简洁"
-            />
-          </Col>
-          <Col span={12}>
-            <Text>提问风格</Text>
-            <Input
-              value={paramConfig.questionStyle}
-              onChange={(e) =>
-                setParamConfig({ ...paramConfig, questionStyle: e.target.value })
-              }
-              style={{ marginTop: 8 }}
-              placeholder="如：逐步深入、直接提问"
-            />
-          </Col>
-        </Row>
-      </Card>
-
-      <Card title="程度调节" size="small">
-        <Space direction="vertical" style={{ width: '100%' }}>
-          <div>
+      <Title level={5}>风格调整</Title>
+      <Row gutter={[48, 24]} style={{ marginBottom: 24 }}>
+        <Col span={24}>
+          <div style={{ marginBottom: 8 }}>
             <Text>严格程度</Text>
-            <Slider
-              value={paramConfig.strictness}
-              onChange={(v) => setParamConfig({ ...paramConfig, strictness: v })}
-              min={0}
-              max={100}
-              marks={{ 0: '宽松', 50: '适中', 100: '严格' }}
-            />
+            <Text type="secondary" style={{ float: 'right' }}>
+              {strictness > 70 ? '严格' : strictness > 40 ? '适中' : '宽松'}
+            </Text>
           </div>
-          <div>
+          <Slider
+            value={strictness}
+            onChange={setStrictness}
+            marks={{ 0: '宽松', 50: '适中', 100: '严格' }}
+          />
+        </Col>
+        <Col span={24}>
+          <div style={{ marginBottom: 8 }}>
             <Text>耐心程度</Text>
-            <Slider
-              value={paramConfig.patience}
-              onChange={(v) => setParamConfig({ ...paramConfig, patience: v })}
-              min={0}
-              max={100}
-              marks={{ 0: '急躁', 50: '适中', 100: '极有耐心' }}
-            />
+            <Text type="secondary" style={{ float: 'right' }}>
+              {patience > 70 ? '耐心' : patience > 40 ? '正常' : '快节奏'}
+            </Text>
           </div>
-          <div>
+          <Slider
+            value={patience}
+            onChange={setPatience}
+            marks={{ 0: '快节奏', 50: '正常', 100: '耐心' }}
+          />
+        </Col>
+        <Col span={24}>
+          <div style={{ marginBottom: 8 }}>
             <Text>技术深度</Text>
-            <Slider
-              value={paramConfig.technicalDepth}
-              onChange={(v) => setParamConfig({ ...paramConfig, technicalDepth: v })}
-              min={0}
-              max={100}
-              marks={{ 0: '基础', 50: '适中', 100: '深入' }}
-            />
+            <Text type="secondary" style={{ float: 'right' }}>
+              {technicalDepth > 70 ? '深入' : technicalDepth > 40 ? '适中' : '基础'}
+            </Text>
           </div>
-        </Space>
-      </Card>
+          <Slider
+            value={technicalDepth}
+            onChange={setTechnicalDepth}
+            marks={{ 0: '基础', 50: '适中', 100: '深入' }}
+          />
+        </Col>
+      </Row>
 
-      <Card title="功能开关" size="small">
-        <Row gutter={[16, 16]}>
-          <Col span={12}>
-            <Space>
-              <Switch
-                checked={paramConfig.features.correctErrors}
-                onChange={(v) =>
-                  setParamConfig({
-                    ...paramConfig,
-                    features: { ...paramConfig.features, correctErrors: v },
-                  })
-                }
-              />
-              <Text>纠正错误</Text>
-            </Space>
-          </Col>
-          <Col span={12}>
-            <Space>
-              <Switch
-                checked={paramConfig.features.giveAnswers}
-                onChange={(v) =>
-                  setParamConfig({
-                    ...paramConfig,
-                    features: { ...paramConfig.features, giveAnswers: v },
-                  })
-                }
-              />
-              <Text>直接给出答案</Text>
-            </Space>
-          </Col>
-          <Col span={12}>
-            <Space>
-              <Switch
-                checked={paramConfig.features.askFollowUps}
-                onChange={(v) =>
-                  setParamConfig({
-                    ...paramConfig,
-                    features: { ...paramConfig.features, askFollowUps: v },
-                  })
-                }
-              />
-              <Text>追问</Text>
-            </Space>
-          </Col>
-          <Col span={12}>
-            <Space>
-              <Switch
-                checked={paramConfig.features.giveFeedback}
-                onChange={(v) =>
-                  setParamConfig({
-                    ...paramConfig,
-                    features: { ...paramConfig.features, giveFeedback: v },
-                  })
-                }
-              />
-              <Text>给出反馈</Text>
-            </Space>
-          </Col>
-          <Col span={12}>
-            <Space>
-              <Switch
-                checked={paramConfig.features.doScoring}
-                onChange={(v) =>
-                  setParamConfig({
-                    ...paramConfig,
-                    features: { ...paramConfig.features, doScoring: v },
-                  })
-                }
-              />
-              <Text>评分</Text>
-            </Space>
-          </Col>
-        </Row>
-      </Card>
+      <Divider />
 
-      <Button type="primary" onClick={generatePromptFromParams} block>
-        根据参数生成 Prompt
+      <Title level={5}>功能开关</Title>
+      <Row gutter={[24, 16]} style={{ marginBottom: 24 }}>
+        <Col span={12}>
+          <Card size="small">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <div style={{ fontWeight: 'bold' }}>纠正错误</div>
+                <Text type="secondary" style={{ fontSize: 12 }}>
+                  候选人回答错误时进行纠正
+                </Text>
+              </div>
+              <Switch
+                checked={features.correctErrors}
+                onChange={(checked) => setFeatures((f) => ({ ...f, correctErrors: checked }))}
+              />
+            </div>
+          </Card>
+        </Col>
+        <Col span={12}>
+          <Card size="small">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <div style={{ fontWeight: 'bold' }}>给出答案</div>
+                <Text type="secondary" style={{ fontSize: 12 }}>
+                  候选人说不出时提供参考答案
+                </Text>
+              </div>
+              <Switch
+                checked={features.giveAnswers}
+                onChange={(checked) => setFeatures((f) => ({ ...f, giveAnswers: checked }))}
+              />
+            </div>
+          </Card>
+        </Col>
+        <Col span={12}>
+          <Card size="small">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <div style={{ fontWeight: 'bold' }}>追问细节</div>
+                <Text type="secondary" style={{ fontSize: 12 }}>
+                  根据回答进行追问
+                </Text>
+              </div>
+              <Switch
+                checked={features.askFollowUps}
+                onChange={(checked) => setFeatures((f) => ({ ...f, askFollowUps: checked }))}
+              />
+            </div>
+          </Card>
+        </Col>
+        <Col span={12}>
+          <Card size="small">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <div style={{ fontWeight: 'bold' }}>给出反馈</div>
+                <Text type="secondary" style={{ fontSize: 12 }}>
+                  面试过程中给出评价和建议
+                </Text>
+              </div>
+              <Switch
+                checked={features.giveFeedback}
+                onChange={(checked) => setFeatures((f) => ({ ...f, giveFeedback: checked }))}
+              />
+            </div>
+          </Card>
+        </Col>
+        <Col span={12}>
+          <Card size="small">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <div style={{ fontWeight: 'bold' }}>评分功能</div>
+                <Text type="secondary" style={{ fontSize: 12 }}>
+                  面试过程中进行评分
+                </Text>
+              </div>
+              <Switch
+                checked={features.doScoring}
+                onChange={(checked) => setFeatures((f) => ({ ...f, doScoring: checked }))}
+              />
+            </div>
+          </Card>
+        </Col>
+      </Row>
+
+      <Button type="primary" size="large" onClick={generatePromptFromParams} block>
+        <SaveOutlined /> 生成 Prompt
       </Button>
-    </Space>
+    </div>
   );
 
-  // 渲染自由描述模式
-  const renderFreeDescription = () => (
-    <Space direction="vertical" style={{ width: '100%' }} size="large">
+  // 渲染自由描述 Tab
+  const renderDescriptionTab = () => (
+    <div style={{ padding: '16px 0' }}>
       <Alert
-        message="自由描述生成 Prompt"
-        description="用文字描述您期望的面试官风格，AI 会为您生成新的 System Prompt。这将完全覆盖当前已有的 Prompt。"
+        message="用文字描述您期望的面试官风格，AI 会为您生成新的 System Prompt。这将完全覆盖当前已有的 Prompt。"
         type="warning"
         showIcon
+        style={{ marginBottom: 24 }}
       />
 
+      <Title level={5}>描述您期望的面试官风格</Title>
       <TextArea
-        value={freeDescription}
-        onChange={(e) => setFreeDescription(e.target.value)}
-        placeholder={
-          '例如：\n' +
-          '- 像一个有经验的学长，耐心引导\n' +
-          '- 对前端技术很了解，会问深入的原理问题\n' +
-          '- 不会直接否定错误，而是引导思考\n' +
-          '- 关注项目经验，会问很多细节'
-        }
-        rows={8}
+        value={customDescription}
+        onChange={(e) => setCustomDescription(e.target.value)}
+        placeholder="例如：我希望面试官像一位经验丰富的技术总监，关注候选人的架构设计能力，面试风格比较轻松但会在关键问题上深入追问..."
+        rows={6}
+        style={{ marginBottom: 16 }}
       />
 
       <Button
         type="primary"
-        onClick={handleGenerateFromDescription}
-        loading={isGenerating}
+        size="large"
+        onClick={generatePromptFromDescription}
+        disabled={!customDescription.trim()}
         block
-        icon={<ThunderboltOutlined />}
       >
-        AI 生成 Prompt
+        <EditOutlined /> 生成 Prompt
       </Button>
-
-      {generatedPrompt && (
-        <Card title="生成的 Prompt" size="small" style={{ backgroundColor: '#f6ffed' }}>
-          <pre
-            style={{
-              margin: 0,
-              whiteSpace: 'pre-wrap',
-              fontSize: 13,
-              maxHeight: 200,
-              overflow: 'auto',
-            }}
-          >
-            {generatedPrompt}
-          </pre>
-        </Card>
-      )}
-    </Space>
+    </div>
   );
 
-  // 渲染 Prompt 编辑模式
-  const renderPromptEdit = () => (
-    <Space direction="vertical" style={{ width: '100%' }} size="large">
+  // 渲染 Prompt 编辑 Tab
+  const renderPromptEditTab = () => (
+    <div style={{ padding: '16px 0' }}>
       <Alert
-        message="直接编辑 System Prompt（最终生效）"
-        description="这是最终生效的 System Prompt，直接编辑即可生效。其他模式生成的 Prompt 最终也是保存到这里。可用变量：{{jd_summary}}、{{resume_summary}}、{{knowledge_context}}"
+        message="这是最终生效的 System Prompt，直接编辑即可生效。其他模式生成的 Prompt 最终也是保存到这里。"
+        description="可用变量：{{jd_summary}}、{{resume_summary}}、{{knowledge_context}}"
         type="warning"
         showIcon
+        style={{ marginBottom: 16 }}
       />
-
-      <Card size="small" title="可用变量" style={{ backgroundColor: '#e6f7ff' }}>
-        <Space wrap>
-          <Tooltip title="JD 摘要">
-            <Tag color="blue">{'{{jd_summary}}'}</Tag>
-          </Tooltip>
-          <Tooltip title="简历摘要">
-            <Tag color="green">{'{{resume_summary}}'}</Tag>
-          </Tooltip>
-          <Tooltip title="知识库上下文（RAG）">
-            <Tag color="purple">{'{{knowledge_context}}'}</Tag>
-          </Tooltip>
-        </Space>
-      </Card>
 
       <TextArea
-        value={systemPrompt}
-        onChange={(e) => setSystemPrompt(e.target.value)}
-        placeholder="输入 System Prompt..."
+        value={customPrompt}
+        onChange={(e) => setCustomPrompt(e.target.value)}
         rows={20}
-        style={{ fontFamily: 'monospace', fontSize: 13 }}
+        style={{ fontFamily: 'monospace', marginBottom: 16 }}
       />
-    </Space>
+
+      <Row gutter={[16, 16]}>
+        <Col span={12}>
+          <Button
+            type="primary"
+            size="large"
+            onClick={() => saveConfig({ ...interviewerConfig, systemPrompt: customPrompt })}
+            block
+          >
+            <SaveOutlined /> 保存配置
+          </Button>
+        </Col>
+        <Col span={12}>
+          <Button
+            size="large"
+            onClick={() => {
+              setCustomPrompt(interviewerConfig.systemPrompt || '');
+              message.info('已恢复');
+            }}
+            block
+          >
+            <ReloadOutlined /> 恢复
+          </Button>
+        </Col>
+      </Row>
+    </div>
   );
 
-  const tabItems = [
-    {
-      key: 'quick',
-      label: (
-        <Space>
-          <ThunderboltOutlined />
-          快速选择
-        </Space>
-      ),
-      children: renderQuickSelect(),
-    },
-    {
-      key: 'params',
-      label: (
-        <Space>
-          <EditOutlined />
-          参数调整
-        </Space>
-      ),
-      children: renderParamAdjust(),
-    },
-    {
-      key: 'describe',
-      label: (
-        <Space>
-          <MessageOutlined />
-          自由描述
-        </Space>
-      ),
-      children: renderFreeDescription(),
-    },
-    {
-      key: 'edit',
-      label: (
-        <Space>
-          <CodeOutlined />
-          Prompt编辑
-        </Space>
-      ),
-      children: renderPromptEdit(),
-    },
-  ];
-
   return (
-    <Card
-      title={
-        <Space>
-          <Title level={5} style={{ margin: 0 }}>
-            面试官配置
-          </Title>
-          <Tag color="orange">
-            {PRESET_TEMPLATES.find((p) => p.key === selectedPreset)?.name || '自定义'}
-          </Tag>
-        </Space>
-      }
-      extra={
-        <Space>
-          <Button icon={<ReloadOutlined />} onClick={handleReset}>
-            恢复默认
-          </Button>
-          <Button type="primary" icon={<SaveOutlined />} onClick={handleSave}>
-            保存配置
-          </Button>
-        </Space>
-      }
-    >
+    <Card>
       <Tabs
         activeKey={activeTab}
         onChange={setActiveTab}
-        items={tabItems}
-        type="card"
+        items={[
+          {
+            key: 'presets',
+            label: (
+              <span>
+                <CopyOutlined /> 配置模板库
+              </span>
+            ),
+            children: renderPresetsTab(),
+          },
+          {
+            key: 'quick',
+            label: (
+              <span>
+                <ThunderboltOutlined /> 快速选择
+              </span>
+            ),
+            children: renderQuickSelectTab(),
+          },
+          {
+            key: 'params',
+            label: (
+              <span>
+                <EditOutlined /> 参数调整
+              </span>
+            ),
+            children: renderParamsTab(),
+          },
+          {
+            key: 'description',
+            label: (
+              <span>
+                <MessageOutlined /> 自由描述
+              </span>
+            ),
+            children: renderDescriptionTab(),
+          },
+          {
+            key: 'prompt',
+            label: (
+              <span>
+                <CodeOutlined /> Prompt编辑
+              </span>
+            ),
+            children: renderPromptEditTab(),
+          },
+        ]}
       />
     </Card>
   );

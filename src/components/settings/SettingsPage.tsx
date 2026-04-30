@@ -25,7 +25,7 @@ import {
 } from '@ant-design/icons';
 import { useInterviewStore } from '@/stores/interviewStore';
 import type { InterviewerConfig } from '@/types';
-import InterviewerConfigPanel from './InterviewerConfigPanel';
+import { InterviewerConfigPanel } from './InterviewerConfigPanel';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -221,7 +221,7 @@ export default function SettingsPage() {
               </Space>
             ),
             children: (
-              <InterviewerConfigPanel onSave={handleSaveInterviewerConfig} />
+              <InterviewerConfigPanel />
             ),
           },
         ]}

@@ -32,6 +32,17 @@ export interface InterviewerConfig {
   systemPrompt?: string;
 }
 
+// 面试官预设模板类型
+export interface InterviewerPreset {
+  id: string;
+  name: string;
+  description: string;
+  config: InterviewerConfig;
+  isBuiltIn: boolean;
+  createdAt: number;
+  updatedAt: number;
+}
+
 // JD 分析结果类型
 export interface JDAnalysis {
   id?: string;

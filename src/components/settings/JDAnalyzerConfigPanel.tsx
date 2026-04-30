@@ -107,10 +107,65 @@ export function JDAnalyzerConfigPanel() {
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
   const [saveForm] = Form.useForm();
 
+  // 自由描述相关状态
+  const [description, setDescription] = useState('');
+  const [generatedPrompt, setGeneratedPrompt] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
+
   // 获取当前配置对应的预设
   const getCurrentPreset = (): JDAnalyzerPreset | undefined => {
     if (!activeJDAnalyzerPresetId) return undefined;
     return jdAnalyzerPresets.find((p) => p.id === activeJDAnalyzerPresetId);
+  };
+
+  // 根据描述生成 Prompt
+  const generatePromptFromDescription = async () => {
+    if (!description.trim()) return;
+
+    setIsGenerating(true);
+    try {
+      // 根据描述生成 System Prompt（模拟 AI 生成）
+      const styleMap: Record<string, string> = {
+        detailed: '详细深入',
+        concise: '简洁明了',
+        professional: '专业严谨',
+      };
+
+      const enabledDimensions = ANALYSIS_DIMENSIONS.filter(
+        (dim) => jdAnalyzerConfig.dimensions[dim.key as keyof typeof jdAnalyzerConfig.dimensions]
+      );
+
+      const dimensionsText = enabledDimensions.map((d) => d.label).join('、');
+
+      const generated = `你是一位专业的 JD（职位描述）分析专家。${description}
+
+分析维度：
+${enabledDimensions.map((d) => `- ${d.label}：${d.desc}`).join('\n')}
+
+分析要求：
+1. 分析风格：${styleMap[jdAnalyzerConfig.style] || '详细'}
+2. 输出语言：${jdAnalyzerConfig.language === 'zh' ? '中文' : 'English'}
+3. 提取 ${jdAnalyzerConfig.tagCount} 个核心技能标签
+4. ${description.includes('技术') ? '重点关注技术栈和项目经验' : ''}
+5. ${description.includes('管理') ? '关注团队管理能力和业务视野' : ''}
+
+输出格式：
+请严格按照以下格式输出分析结果：
+
+${enabledDimensions.map((d) => `**${d.label}**：\n[分析内容]\n`).join('\n')}
+
+**技能标签**：
+[列出 {{tag_count}} 个核心技能标签，用顿号分隔]
+
+待分析JD：
+{{jd_text}}`;
+
+      setGeneratedPrompt(generated);
+    } catch (error) {
+      console.error('生成 Prompt 失败:', error);
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   // 渲染配置模板库 Tab
@@ -334,6 +389,83 @@ export function JDAnalyzerConfigPanel() {
           </div>
         </Space>
       </Card>
+    </Space>
+  );
+
+  // 渲染自由描述 Tab
+  const renderDescriptionTab = () => (
+    <Space direction="vertical" style={{ width: '100%' }} size="large">
+      <Alert
+        type="warning"
+        showIcon
+        message="自由描述"
+        description="用文字描述您期望的 JD 分析风格，系统会为您生成对应的 System Prompt。这将覆盖当前已有的 Prompt。"
+      />
+
+      <Card type="inner" title="描述您的期望">
+        <Space direction="vertical" style={{ width: '100%' }}>
+          <TextArea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            rows={6}
+            placeholder="例如：我希望分析重点关注技术栈匹配度，对于后端岗位需要深入分析分布式系统经验，对于前端岗位关注组件化设计能力..."
+          />
+          <Button
+            type="primary"
+            onClick={generatePromptFromDescription}
+            loading={isGenerating}
+            disabled={!description.trim()}
+            block
+          >
+            生成 Prompt
+          </Button>
+        </Space>
+      </Card>
+
+      {generatedPrompt && (
+        <Card
+          type="inner"
+          title="生成的 System Prompt"
+          extra={
+            <Space>
+              <Button
+                size="small"
+                onClick={() => {
+                  setJDAnalyzerConfig({ systemPrompt: generatedPrompt });
+                  setActiveTab('prompt');
+                }}
+              >
+                应用到 Prompt编辑
+              </Button>
+              <Button
+                type="primary"
+                size="small"
+                icon={<CopyOutlined />}
+                onClick={() => {
+                  navigator.clipboard.writeText(generatedPrompt);
+                }}
+              >
+                复制
+              </Button>
+            </Space>
+          }
+        >
+          <pre
+            style={{
+              backgroundColor: '#f5f5f5',
+              padding: 12,
+              borderRadius: 4,
+              maxHeight: 400,
+              overflow: 'auto',
+              fontFamily: 'monospace',
+              fontSize: 13,
+              margin: 0,
+            }}
+          >
+            {generatedPrompt}
+          </pre>
+        </Card>
+      )}
     </Space>
   );
 
@@ -597,6 +729,16 @@ export function JDAnalyzerConfigPanel() {
               </Space>
             ),
             children: renderDimensionsTab(),
+          },
+          {
+            key: 'description',
+            label: (
+              <Space>
+                <FileTextOutlined />
+                自由描述
+              </Space>
+            ),
+            children: renderDescriptionTab(),
           },
           {
             key: 'prompt',

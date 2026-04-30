@@ -179,16 +179,15 @@ export default function InterviewSetup({
             onChange={(e) => setInterviewerType(e.target.value)}
             style={{ width: '100%' }}
           >
-            {INTERVIEWER_TYPES.map((type, index) => (
+            {INTERVIEWER_TYPES.map((type) => (
               <RadioButton
                 key={type.type}
                 value={type.type}
                 style={{ width: '25%' }}
-                disabled={type.type === 'custom' && !hasCustomConfig}
               >
-                {type.name}
+                <span style={{ fontSize: 13 }}>{type.name}</span>
                 {type.type === 'custom' && hasCustomConfig && (
-                  <Tag color="orange" style={{ marginLeft: 4, fontSize: 10 }}>已配置</Tag>
+                  <Tag color="orange" style={{ marginLeft: 4, fontSize: 10, padding: '0 4px' }}>已配置</Tag>
                 )}
               </RadioButton>
             ))}

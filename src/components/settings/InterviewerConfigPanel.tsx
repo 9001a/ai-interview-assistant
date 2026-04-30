@@ -42,141 +42,6 @@ const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
 
 // 系统预设模板（用于快速选择）
-const QUICK_TEMPLATES: Array<{
-  key: string;
-  name: string;
-  description: string;
-  icon: React.ReactNode;
-  config: Partial<InterviewerConfig>;
-  systemPrompt: string;
-}> = [
-  {
-    key: 'professional',
-    name: '专业型',
-    description: '专业严谨，直接提问，注重技术细节',
-    icon: <ThunderboltOutlined />,
-    config: {
-      type: 'professional',
-      style: '专业严谨',
-      tone: '正式',
-      expression: '专业且简洁',
-      questionStyle: '直接提问',
-      features: {
-        correctErrors: true,
-        giveAnswers: true,
-        askFollowUps: true,
-        giveFeedback: true,
-        doScoring: true,
-      },
-    },
-    systemPrompt: `你是一个专业严谨的面试官，专注于评估候选人的技术能力和专业素养。
-
-面试风格：
-- 直接提出技术问题，不绕弯子
-- 对答案要求逻辑严密、条理清晰
-- 在关键概念上会深入追问细节
-
-提问策略：
-- 从基础概念开始，逐步深入
-- 关注候选人对技术的理解深度
-- 对模糊回答会要求澄清
-
-纠错方式：
-- 直接指出错误并解释原因
-- 提供正确的思路和答案
-- 考察候选人接受反馈的能力
-
-面试材料：
-- JD: {{jd_summary}}
-- 简历: {{resume_summary}}
-{{knowledge_context}}
-
-现在开始面试吧！先让候选人自我介绍。`,
-  },
-  {
-    key: 'friendly',
-    name: '友好型',
-    description: '温和友善，引导思考，关注思维过程',
-    icon: <MessageOutlined />,
-    config: {
-      type: 'friendly',
-      style: '温和友善',
-      tone: '友好',
-      expression: '温和且鼓励',
-      questionStyle: '引导式提问',
-      features: {
-        correctErrors: true,
-        giveAnswers: false,
-        askFollowUps: true,
-        giveFeedback: true,
-        doScoring: false,
-      },
-    },
-    systemPrompt: `你是一位温和友善的面试官，像一个耐心的导师。
-
-面试风格：
-- 对候选人比较耐心，会引导思考
-- 在关键问题上要求逻辑严密
-- 语气温和但专业
-
-提问策略：
-- 使用"你为什么这么想？"来引导，而不是直接否定
-- 关注候选人的思维过程，而不仅仅是答案
-
-纠错方式：
-- 温和地指出错误："这个思路有些问题，我们可以这样思考..."
-- 给出正确答案和解释
-
-面试材料：
-- JD: {{jd_summary}}
-- 简历: {{resume_summary}}
-{{knowledge_context}}
-
-现在开始面试吧！先让候选人自我介绍。`,
-  },
-  {
-    key: 'stress',
-    name: '压力型',
-    description: '快速追问，考察抗压和应变能力',
-    icon: <ThunderboltOutlined />,
-    config: {
-      type: 'stress',
-      style: '快节奏追问',
-      tone: '严肃',
-      expression: '挑战性',
-      questionStyle: '连续追问',
-      features: {
-        correctErrors: true,
-        giveAnswers: false,
-        askFollowUps: true,
-        giveFeedback: false,
-        doScoring: true,
-      },
-    },
-    systemPrompt: `你是一位压力型面试官，通过快节奏的追问来考察候选人的抗压能力。
-
-面试风格：
-- 语速快，问题密集
-- 对模糊回答会立即追问细节
-- 态度严肃，不苟言笑
-
-提问策略：
-- 不给你太多思考时间
-- 一个问题接一个问题
-- 故意打断，考验应变能力
-
-纠错方式：
-- 直接指出："不对，这个答案有问题"
-- 不给解释，继续下一个问题
-
-面试材料：
-- JD: {{jd_summary}}
-- 简历: {{resume_summary}}
-{{knowledge_context}}
-
-现在开始面试吧！简单自我介绍，1分钟。`,
-  },
-];
 
 // 默认配置
 const defaultConfig: InterviewerConfig = {
@@ -216,7 +81,6 @@ export function InterviewerConfigPanel() {
   const userPresets = presets.filter((p: InterviewerPreset) => !p.isBuiltIn);
 
   const [activeTab, setActiveTab] = useState('presets');
-  const [quickTemplate, setQuickTemplate] = useState<string | null>(null);
   const [customPrompt, setCustomPrompt] = useState(interviewerConfig.systemPrompt || '');
   const [customDescription, setCustomDescription] = useState('');
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
@@ -330,14 +194,6 @@ ${features.doScoring ? '- ✓ 会进行评分' : '- ✗ 不会评分'}
       message.destroy();
       message.error('生成失败，请稍后重试');
     }
-  };
-
-  // 加载预设模板
-  const loadQuickTemplate = (template: typeof QUICK_TEMPLATES[0]) => {
-    setQuickTemplate(template.key);
-    setCustomPrompt(template.systemPrompt);
-    saveConfig({ ...interviewerConfig, ...template.config, systemPrompt: template.systemPrompt });
-    message.success(`已加载 ${template.name} 模板`);
   };
 
   // 渲染预设模板列表
@@ -458,44 +314,6 @@ ${features.doScoring ? '- ✓ 会进行评分' : '- ✗ 不会评分'}
     </div>
   );
 
-  // 渲染快速选择 Tab
-  const renderQuickSelectTab = () => (
-    <div style={{ padding: '16px 0' }}>
-      <Alert
-        message="使用预设模板"
-        description="点击下方卡片直接加载预设模板，这会覆盖当前的 Prompt 配置。如果需要保留当前配置，请先保存为模板。"
-        type="info"
-        showIcon
-        style={{ marginBottom: 24 }}
-      />
-
-      <Row gutter={[16, 16]}>
-        {QUICK_TEMPLATES.map((template) => (
-          <Col span={8} key={template.key}>
-            <Card
-              hoverable
-              style={{
-                borderColor: quickTemplate === template.key ? '#1890ff' : undefined,
-              }}
-              onClick={() => loadQuickTemplate(template)}
-            >
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: 32, marginBottom: 12, color: '#1890ff' }}>
-                  {template.icon}
-                </div>
-                <Title level={5} style={{ margin: '0 0 8px' }}>
-                  {template.name}
-                </Title>
-                <Paragraph type="secondary" style={{ fontSize: 12, margin: 0 }}>
-                  {template.description}
-                </Paragraph>
-              </div>
-            </Card>
-          </Col>
-        ))}
-      </Row>
-    </div>
-  );
 
   // 渲染参数调整 Tab
   const renderParamsTab = () => (
@@ -732,15 +550,6 @@ ${features.doScoring ? '- ✓ 会进行评分' : '- ✗ 不会评分'}
               </span>
             ),
             children: renderPresetsTab(),
-          },
-          {
-            key: 'quick',
-            label: (
-              <span>
-                <ThunderboltOutlined /> 快速选择
-              </span>
-            ),
-            children: renderQuickSelectTab(),
           },
           {
             key: 'params',

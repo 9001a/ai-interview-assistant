@@ -15,6 +15,7 @@ import { usePageStore } from '@/stores/pageStore';
 import { useWorkspaceStore } from '@/stores/workspaceStore';
 import { useJDStore } from '@/stores/jdStore';
 import { useResumeStore } from '@/stores/resumeStore';
+import { useKnowledgeStore } from '@/stores/knowledgeStore';
 import InterviewSetup from './InterviewSetup';
 import InterviewChat from './InterviewChat';
 import type { JDAnalysis, Resume, KnowledgeDocument, ChatMessage, WorkspaceJD, WorkspaceResume } from '@/types';
@@ -361,6 +362,32 @@ export default function InterviewPage() {
     addMessage(typingMsg);
 
     try {
+      // 步骤1：如果有选中的知识库，先进行检索
+      let knowledgeContext = '';
+      if (selectedKnowledgeBase?.id) {
+        try {
+          const { retrieveSegments } = useKnowledgeStore.getState();
+          const retrievalResults = await retrieveSegments(
+            content, // 使用用户问题作为检索查询
+            [selectedKnowledgeBase.id],
+            3 // Top-3 最相关的片段
+          );
+
+          if (retrievalResults.length > 0) {
+            // 格式化检索结果为上下文
+            knowledgeContext = retrievalResults
+              .map((r, idx) =>
+                `[参考${idx + 1}] ${r.documentTitle}\n${r.chunkContent}\n相关片段：${r.segmentContent}`
+              )
+              .join('\n\n');
+            console.log('[Interview] 知识库检索完成，找到', retrievalResults.length, '条结果');
+          }
+        } catch (error) {
+          console.error('[Interview] 知识库检索失败:', error);
+          // 检索失败不影响主流程，继续面试
+        }
+      }
+
       const res = await interviewApi.chat({
         mode: 'evaluate',
         jdAnalysis,
@@ -368,6 +395,7 @@ export default function InterviewPage() {
         interviewerConfig,
         userAnswer: content,
         lastQuestion,
+        knowledgeContext, // 传递知识库上下文
       });
 
       if (res.success && res.evaluation) {

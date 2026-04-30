@@ -183,27 +183,34 @@ function replaceTemplateVars(
 function buildSystemPrompt(
   interviewerConfig: any,
   jdAnalysis: any,
-  resume: any
+  resume: any,
+  knowledgeContext?: string
 ): string {
+  // 格式化知识库上下文
+  const knowledgeContextText = knowledgeContext
+    ? `\n\n【参考知识库内容】\n${knowledgeContext}\n【参考知识库结束】\n`
+    : '';
+
   // 如果有自定义 systemPrompt，使用它并替换变量
   if (interviewerConfig.systemPrompt) {
     const vars: Record<string, string> = {
       jd_summary: jdAnalysis ? JSON.stringify(jdAnalysis.summary || jdAnalysis) : '暂无JD信息',
       resume_summary: resume?.content || resume?.summary || '暂无简历信息',
-      knowledge_context: '', // 暂时为空，后续可以从RAG获取
+      knowledge_context: knowledgeContextText,
     };
     return replaceTemplateVars(interviewerConfig.systemPrompt, vars);
   }
 
   // 默认 prompt
-  return `你是一位${interviewerConfig.name}，风格${interviewerConfig.style}，语气${interviewerConfig.tone}。请根据JD和简历内容向候选人提出面试问题。`;
+  return `你是一位${interviewerConfig.name}，风格${interviewerConfig.style}，语气${interviewerConfig.tone}。请根据JD和简历内容向候选人提出面试问题。${knowledgeContextText}`;
 }
 
 export async function generateInterviewQuestion(
   jdAnalysis: any,
   resume: any,
   interviewerConfig: any,
-  previousMessages: any[]
+  previousMessages: any[],
+  knowledgeContext?: string
 ): Promise<string> {
   // 模拟模式：直接返回模拟问题
   if (isMockMode) {
@@ -215,8 +222,8 @@ export async function generateInterviewQuestion(
   const jdSummary = jdAnalysis ? JSON.stringify(jdAnalysis) : '';
   const resumeContent = resume?.content || resume?.summary || '';
 
-  // 构建 System Prompt（使用自定义配置）
-  const systemPrompt = buildSystemPrompt(interviewerConfig, jdAnalysis, resume);
+  // 构建 System Prompt（使用自定义配置，包含知识库上下文）
+  const systemPrompt = buildSystemPrompt(interviewerConfig, jdAnalysis, resume, knowledgeContext);
 
   const context = `
 面试官类型：${interviewerConfig.name} (${interviewerConfig.type})
@@ -276,7 +283,8 @@ export async function evaluateAnswer(
   userAnswer: string,
   lastQuestion: string,
   jdAnalysis: any,
-  interviewerConfig: any
+  interviewerConfig: any,
+  knowledgeContext?: string
 ): Promise<{
   feedback: string;
   score: number;
@@ -296,8 +304,8 @@ export async function evaluateAnswer(
 
   const jdSummary = jdAnalysis ? JSON.stringify(jdAnalysis) : '';
 
-  // 构建 System Prompt（使用自定义配置）
-  const systemPrompt = buildSystemPrompt(interviewerConfig, jdAnalysis, null);
+  // 构建 System Prompt（使用自定义配置，包含知识库上下文）
+  const systemPrompt = buildSystemPrompt(interviewerConfig, jdAnalysis, null, knowledgeContext);
 
   const userPrompt = `
 面试官类型：${interviewerConfig.name} (${interviewerConfig.type})

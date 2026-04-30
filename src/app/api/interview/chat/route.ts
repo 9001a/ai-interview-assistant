@@ -12,6 +12,7 @@ export async function POST(req: NextRequest) {
       messages,
       userAnswer,
       lastQuestion,
+      knowledgeContext, // 知识库检索上下文
     } = await req.json();
 
     if (mode === 'question') {
@@ -20,7 +21,8 @@ export async function POST(req: NextRequest) {
         jdAnalysis,
         resume,
         interviewerConfig,
-        messages
+        messages,
+        knowledgeContext // 传递知识库上下文
       );
 
       return NextResponse.json({ success: true, question });
@@ -30,7 +32,8 @@ export async function POST(req: NextRequest) {
         userAnswer,
         lastQuestion,
         jdAnalysis,
-        interviewerConfig
+        interviewerConfig,
+        knowledgeContext // 传递知识库上下文
       );
 
       return NextResponse.json({ success: true, evaluation });

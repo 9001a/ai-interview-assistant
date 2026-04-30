@@ -111,8 +111,9 @@ export const interviewApi = {
     messages?: any[];
     userAnswer?: string;
     lastQuestion?: string;
-  }): Promise<{ 
-    success: boolean; 
+    knowledgeContext?: string; // 知识库检索上下文
+  }): Promise<{
+    success: boolean;
     question?: string;
     evaluation?: {
       feedback: string;
@@ -120,7 +121,7 @@ export const interviewApi = {
       nextQuestion: string;
       shouldContinue: boolean;
     };
-    error?: string; 
+    error?: string;
   }> => {
     return api.post('/interview/chat', data);
   },

@@ -169,6 +169,36 @@ const mockQuestions = [
   '有什么想要问我的吗？',
 ];
 
+// 替换模板变量
+function replaceTemplateVars(
+  template: string,
+  vars: Record<string, string>
+): string {
+  return template.replace(/\{\{(\w+)\}\}/g, (match, key) => {
+    return vars[key] !== undefined ? vars[key] : match;
+  });
+}
+
+// 构建 System Prompt
+function buildSystemPrompt(
+  interviewerConfig: any,
+  jdAnalysis: any,
+  resume: any
+): string {
+  // 如果有自定义 systemPrompt，使用它并替换变量
+  if (interviewerConfig.systemPrompt) {
+    const vars: Record<string, string> = {
+      jd_summary: jdAnalysis ? JSON.stringify(jdAnalysis.summary || jdAnalysis) : '暂无JD信息',
+      resume_summary: resume?.content || resume?.summary || '暂无简历信息',
+      knowledge_context: '', // 暂时为空，后续可以从RAG获取
+    };
+    return replaceTemplateVars(interviewerConfig.systemPrompt, vars);
+  }
+
+  // 默认 prompt
+  return `你是一位${interviewerConfig.name}，风格${interviewerConfig.style}，语气${interviewerConfig.tone}。请根据JD和简历内容向候选人提出面试问题。`;
+}
+
 export async function generateInterviewQuestion(
   jdAnalysis: any,
   resume: any,
@@ -184,11 +214,15 @@ export async function generateInterviewQuestion(
 
   const jdSummary = jdAnalysis ? JSON.stringify(jdAnalysis) : '';
   const resumeContent = resume?.content || resume?.summary || '';
-  
+
+  // 构建 System Prompt（使用自定义配置）
+  const systemPrompt = buildSystemPrompt(interviewerConfig, jdAnalysis, resume);
+
   const context = `
 面试官类型：${interviewerConfig.name} (${interviewerConfig.type})
 风格：${interviewerConfig.style}
 语气：${interviewerConfig.tone}
+提问风格：${interviewerConfig.questionStyle}
 
 JD分析：
 ${jdSummary}
@@ -200,9 +234,9 @@ ${resumeContent}
 ${previousMessages.map(m => `${m.role}: ${m.content}`).join('\n')}
 `;
 
-  const prompt = `${context}
+  const userPrompt = `${context}
 
-你是一位${interviewerConfig.name}。请根据JD要求和简历内容，用${interviewerConfig.questionStyle}的方式向候选人提出下一个面试问题。
+请根据JD要求和简历内容，用${interviewerConfig.questionStyle}的方式向候选人提出下一个面试问题。
 
 要求：
 1. 问题要贴合JD要求，考察候选人的实际能力
@@ -217,8 +251,8 @@ ${previousMessages.map(m => `${m.role}: ${m.content}`).join('\n')}
     const response = await openai.chat.completions.create({
       model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
       messages: [
-        { role: 'system', content: '你是一位专业的面试官。' },
-        { role: 'user', content: prompt },
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt },
       ],
       temperature: 0.7,
     });
@@ -261,8 +295,11 @@ export async function evaluateAnswer(
   }
 
   const jdSummary = jdAnalysis ? JSON.stringify(jdAnalysis) : '';
-  
-  const prompt = `
+
+  // 构建 System Prompt（使用自定义配置）
+  const systemPrompt = buildSystemPrompt(interviewerConfig, jdAnalysis, null);
+
+  const userPrompt = `
 面试官类型：${interviewerConfig.name} (${interviewerConfig.type})
 风格：${interviewerConfig.style}
 语气：${interviewerConfig.tone}
@@ -277,9 +314,9 @@ ${userAnswer}
 
 请评估候选人的回答，要求：
 1. 用${interviewerConfig.tone}的语气给出反馈
-2. ${interviewerConfig.features.giveFeedback ? '给出具体的评价和建议' : '简单确认'}
-3. ${interviewerConfig.features.correctErrors ? '指出错误并给出正确答案' : '不直接给出答案'}
-4. ${interviewerConfig.features.askFollowUps ? '根据回答提出追问' : '继续下一个话题'}
+2. ${interviewerConfig.features?.giveFeedback ? '给出具体的评价和建议' : '简单确认'}
+3. ${interviewerConfig.features?.correctErrors ? '指出错误并给出正确答案' : '不直接给出答案'}
+4. ${interviewerConfig.features?.askFollowUps ? '根据回答提出追问' : '继续下一个话题'}
 5. 给出一个0-100的评分
 6. 决定是否继续面试（最多30轮）
 
@@ -303,8 +340,8 @@ ${userAnswer}
     const response = await openai.chat.completions.create({
       model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
       messages: [
-        { role: 'system', content: '你是一位专业的面试官，评估候选人并给出反馈。' },
-        { role: 'user', content: prompt },
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt },
       ],
       temperature: 0.7,
       response_format: { type: 'json_object' },

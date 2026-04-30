@@ -1,7 +1,8 @@
 'use client';
 
-import { Card, Form, Select, Radio, Button, Space, Divider, Typography, Alert } from 'antd';
+import { Card, Form, Select, Radio, Button, Space, Divider, Typography, Alert, Tag } from 'antd';
 import { useState } from 'react';
+import { useInterviewStore } from '@/stores/interviewStore';
 import type { JDAnalysis, Resume, InterviewerConfig, KnowledgeDocument } from '@/types';
 
 const { Title, Text } = Typography;
@@ -21,7 +22,7 @@ interface InterviewSetupProps {
 }
 
 const INTERVIEWER_TYPES: Array<{
-  type: InterviewerConfig['type'];
+  type: InterviewerConfig['type'] | 'custom';
   name: string;
   description: string;
 }> = [
@@ -40,6 +41,11 @@ const INTERVIEWER_TYPES: Array<{
     name: '压力型',
     description: '多轮追问，考察抗压，快速反应',
   },
+  {
+    type: 'custom',
+    name: '我的自定义',
+    description: '使用我在设置页面配置的面试官风格',
+  },
 ];
 
 export default function InterviewSetup({
@@ -49,7 +55,11 @@ export default function InterviewSetup({
   knowledgeBaseOptions,
 }: InterviewSetupProps) {
   const [form] = Form.useForm();
-  const [interviewerType, setInterviewerType] = useState<InterviewerConfig['type']>('professional');
+  const [interviewerType, setInterviewerType] = useState<InterviewerConfig['type'] | 'custom'>('friendly');
+
+  // 从 Store 读取用户保存的自定义配置
+  const savedConfig = useInterviewStore((state) => state.interviewerConfig);
+  const hasCustomConfig = savedConfig.systemPrompt || savedConfig.customDescription;
 
   const handleSubmit = () => {
     form.validateFields().then((values) => {
@@ -57,31 +67,41 @@ export default function InterviewSetup({
       const selectedResume = resumeOptions.find(o => o.value === values.resumeId);
       const selectedKB = knowledgeBaseOptions.find(o => o.value === values.knowledgeBaseId);
 
-      const interviewerConfig: InterviewerConfig = {
-        name: INTERVIEWER_TYPES.find(t => t.type === interviewerType)?.name || '专业型面试官',
-        type: interviewerType,
-        style: interviewerType === 'professional' ? '专业严谨' : 
-               interviewerType === 'friendly' ? '温和引导' : '压力测试',
-        tone: interviewerType === 'professional' ? '正式' : 
-              interviewerType === 'friendly' ? '温和' : '尖锐',
-        expression: interviewerType === 'professional' ? '专业且简洁' : 
-                   interviewerType === 'friendly' ? '鼓励式' : '挑战性',
-        questionStyle: interviewerType === 'professional' ? '直接提问' : 
-                        interviewerType === 'friendly' ? '逐步深入' : '连续追问',
-        features: {
-          correctErrors: true,
-          giveAnswers: true,
-          askFollowUps: true,
-          giveFeedback: true,
-          doScoring: interviewerType === 'professional',
-        },
-        focusAreas: {
-          technical: true,
-          project: true,
-          softSkills: true,
-          career: false,
-        },
-      };
+      let interviewerConfig: InterviewerConfig;
+
+      if (interviewerType === 'custom') {
+        // 使用用户自定义配置
+        interviewerConfig = savedConfig;
+      } else {
+        // 使用预设配置，但如果有 systemPrompt 也保留
+        interviewerConfig = {
+          name: INTERVIEWER_TYPES.find(t => t.type === interviewerType)?.name || '专业型面试官',
+          type: interviewerType,
+          style: interviewerType === 'professional' ? '专业严谨' :
+                 interviewerType === 'friendly' ? '温和引导' : '压力测试',
+          tone: interviewerType === 'professional' ? '正式' :
+                interviewerType === 'friendly' ? '温和' : '尖锐',
+          expression: interviewerType === 'professional' ? '专业且简洁' :
+                     interviewerType === 'friendly' ? '鼓励式' : '挑战性',
+          questionStyle: interviewerType === 'professional' ? '直接提问' :
+                          interviewerType === 'friendly' ? '逐步深入' : '连续追问',
+          features: {
+            correctErrors: true,
+            giveAnswers: true,
+            askFollowUps: true,
+            giveFeedback: true,
+            doScoring: interviewerType === 'professional',
+          },
+          focusAreas: {
+            technical: true,
+            project: true,
+            softSkills: true,
+            career: false,
+          },
+          // 如果有保存的 systemPrompt，也应用到预设类型
+          ...(savedConfig.systemPrompt && { systemPrompt: savedConfig.systemPrompt }),
+        };
+      }
 
       onStart({
         jd: selectedJD?.jd || null,
@@ -159,9 +179,17 @@ export default function InterviewSetup({
             onChange={(e) => setInterviewerType(e.target.value)}
             style={{ width: '100%' }}
           >
-            {INTERVIEWER_TYPES.map(type => (
-              <RadioButton key={type.type} value={type.type} style={{ width: '33.33%' }}>
+            {INTERVIEWER_TYPES.map((type, index) => (
+              <RadioButton
+                key={type.type}
+                value={type.type}
+                style={{ width: '25%' }}
+                disabled={type.type === 'custom' && !hasCustomConfig}
+              >
                 {type.name}
+                {type.type === 'custom' && hasCustomConfig && (
+                  <Tag color="orange" style={{ marginLeft: 4, fontSize: 10 }}>已配置</Tag>
+                )}
               </RadioButton>
             ))}
           </RadioGroup>
@@ -175,6 +203,19 @@ export default function InterviewSetup({
           <Text type="secondary" style={{ fontSize: 14 }}>
             {INTERVIEWER_TYPES.find(t => t.type === interviewerType)?.description}
           </Text>
+          {interviewerType === 'custom' && savedConfig.systemPrompt && (
+            <>
+              <Divider style={{ margin: '12px 0' }} />
+              <Text type="secondary" style={{ fontSize: 12 }}>
+                自定义配置：{savedConfig.name}
+                {savedConfig.customDescription && (
+                  <div style={{ marginTop: 4, color: '#666' }}>
+                    「{savedConfig.customDescription.substring(0, 50)}...」
+                  </div>
+                )}
+              </Text>
+            </>
+          )}
         </div>
       </Form>
       <div style={{ marginTop: 24, textAlign: 'center' }}>

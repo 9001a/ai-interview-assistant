@@ -123,9 +123,14 @@ export async function analyzeJD(
     prompt = basePrompt.replace('{{jd_text}}', jdText);
   }
 
+  // 确保 prompt 中包含 "json" 关键词（API 要求使用 json_object 格式时必须有这个词）
+  const finalPrompt = prompt.toLowerCase().includes('json') 
+    ? prompt 
+    : `${prompt}\n\n重要：请以 JSON 格式输出结果。`;
+
   const response = await openai.chat.completions.create({
     model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
-    messages: [{ role: 'user', content: prompt }],
+    messages: [{ role: 'user', content: finalPrompt }],
     temperature: 0.7,
     response_format: { type: 'json_object' },
   });

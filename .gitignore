@@ -78,6 +78,20 @@ ehthumbs.db
 Thumbs.db
 Desktop.ini
 
+# Coze / Sandbox specific
+.coze/
+.cozeproj/
+app/work/logs/
+
+# Temporary files
+*.tmp
+*.temp
+/tmp/
+
+# Archives
+*.tar.gz
+*.zip
+
 # Temporary files
 *.tmp
 *.temp
